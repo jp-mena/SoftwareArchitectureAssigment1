@@ -1,0 +1,14 @@
+[default]
+address = "127.0.0.1"
+port = 8000
+
+[default.databases]
+# IMPORTANT: Replace with your actual database credentials
+# Format: postgres://username:password@host/database_name
+book_db = { url = "postgres://your_username:your_password@localhost/your_database_name" }
+
+[debug]
+port = 8000
+
+[release]
+port = 8000
