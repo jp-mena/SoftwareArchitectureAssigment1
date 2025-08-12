@@ -16,19 +16,36 @@ fn index() -> &'static str {
     - GET / (esta página)
     - GET /health/db (verificar conexión a base de datos)
     
-    El servidor está funcionando correctamente 🚀"
+    El servidor está funcionando correctamente 🚀
+    
+    💡 Para aplicar migraciones usa: sqlx migrate run"
 }
 
 #[get("/health/db")]
 async fn health_db(mut db: Connection<BookDb>) -> Result<&'static str, Status> {
-    // OJO: doble deref para llegar a PgConnection
+    // Test basic connection
     match sqlx::query_scalar::<_, i32>("SELECT 1")
         .fetch_one(&mut **db)
         .await
     {
-        Ok(_n) => Ok("DB OK"),
+        Ok(_n) => {
+            // Test if our tables exist
+            match sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM information_schema.tables WHERE table_name IN ('authors', 'books', 'reviews', 'sales')")
+                .fetch_one(&mut **db)
+                .await
+            {
+                Ok(count) => {
+                    if count == 4 {
+                        Ok("DB OK - All tables created ✅")
+                    } else {
+                        Ok("DB OK - But missing tables (run migrations) ⚠️")
+                    }
+                },
+                Err(_) => Ok("DB OK - But schema check failed ⚠️")
+            }
+        },
         Err(e) => {
-            eprintln!("DB health error: {e:?}"); // verás el error en la terminal
+            eprintln!("DB health error: {e:?}");
             Err(Status::InternalServerError)
         }
     }
