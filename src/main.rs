@@ -1,25 +1,20 @@
 #[macro_use] extern crate rocket;
 
+mod models;
+mod authors;
+mod books;
+mod reviews;
+mod sales;
+
 use rocket::http::Status;
+use rocket::response::Redirect;
+use rocket_dyn_templates::{Template, context};
 use rocket_db_pools::{Database, Connection};
-use rocket_db_pools::sqlx;
+use sqlx;
 
 #[derive(Database)]
 #[database("book_db")]
-struct BookDb(sqlx::PgPool);
-
-#[get("/")]
-fn index() -> &'static str {
-    "¡Bienvenido a Book Reviews API! 📚
-    
-    Rutas disponibles:
-    - GET / (esta página)
-    - GET /health/db (verificar conexión a base de datos)
-    
-    El servidor está funcionando correctamente 🚀
-    
-    💡 Para aplicar migraciones usa: sqlx migrate run"
-}
+pub struct BookDb(sqlx::PgPool);
 
 #[get("/health/db")]
 async fn health_db(mut db: Connection<BookDb>) -> Result<&'static str, Status> {
@@ -51,9 +46,85 @@ async fn health_db(mut db: Connection<BookDb>) -> Result<&'static str, Status> {
     }
 }
 
+// === RUTAS PARA ADMIN WEB INTERFACE ===
+
+#[get("/admin")]
+fn admin_home() -> Template {
+    Template::render("admin_home", context! {})
+}
+
+#[get("/admin/authors")]
+fn admin_authors_list() -> Template {
+    Template::render("authors_list", context! {})
+}
+
+#[get("/admin/authors/new")]
+fn admin_authors_new() -> Template {
+    Template::render("authors_new", context! {})
+}
+
+// === BOOKS ADMIN ROUTES ===
+
+#[get("/admin/books")]
+fn admin_books_list() -> Template {
+    Template::render("books_list", context! {})
+}
+
+#[get("/admin/books/new")]
+fn admin_books_new() -> Template {
+    Template::render("books_new", context! {})
+}
+
+// === REVIEWS ADMIN ROUTES ===
+
+#[get("/admin/reviews")]
+fn admin_reviews_list() -> Template {
+    Template::render("reviews_list", context! {})
+}
+
+#[get("/admin/reviews/new")]
+fn admin_reviews_new() -> Template {
+    Template::render("reviews_new", context! {})
+}
+
+// === SALES ADMIN ROUTES ===
+
+#[get("/admin/sales")]
+fn admin_sales_list() -> Template {
+    Template::render("sales_list", context! {})
+}
+
+#[get("/admin/sales/new")]
+fn admin_sales_new() -> Template {
+    Template::render("sales_new", context! {})
+}
+
+// Redirección desde raíz a admin
+#[get("/")]
+fn index() -> Redirect {
+    Redirect::to(uri!(admin_home))
+}
+
 #[launch]
 fn rocket() -> _ {
     rocket::build()
         .attach(BookDb::init())
-        .mount("/", routes![index, health_db])
+        .attach(Template::fairing())
+        .mount("/", routes![
+            index, 
+            health_db, 
+            admin_home, 
+            admin_authors_list, 
+            admin_authors_new,
+            admin_books_list,
+            admin_books_new,
+            admin_reviews_list,
+            admin_reviews_new,
+            admin_sales_list,
+            admin_sales_new
+        ])
+        .mount("/api", authors::routes())
+        .mount("/api", books::routes())
+        .mount("/api", reviews::routes())
+        .mount("/api", sales::routes())
 }

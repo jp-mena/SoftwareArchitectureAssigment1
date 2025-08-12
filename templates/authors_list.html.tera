@@ -1,0 +1,190 @@
+{% extends "base" %}
+
+{% block title %}Lista de Autores - Book Reviews{% endblock %}
+
+{% block content %}
+<h2>👥 Lista de Autores</h2>
+
+<div style="margin-bottom: 20px;">
+    <a href="/admin/authors/new" style="text-decoration: none;">
+        <button class="btn-success">➕ Crear Nuevo Autor</button>
+    </a>
+    <button onclick="loadAuthors()">🔄 Actualizar Lista</button>
+</div>
+
+<!-- Área de búsqueda -->
+<div class="form-group">
+    <label for="search">🔍 Buscar autores:</label>
+    <input type="text" id="search" placeholder="Buscar por nombre o país..." onkeyup="filterAuthors()">
+</div>
+
+<!-- Lista de autores -->
+<div id="authors-list">
+    <p>Cargando autores...</p>
+</div>
+
+<!-- Modal para editar autor -->
+<div id="edit-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 10px; width: 90%; max-width: 500px;">
+        <h3>✏️ Editar Autor</h3>
+        <form id="edit-form">
+            <div class="form-group">
+                <label for="edit-name">Nombre:</label>
+                <input type="text" id="edit-name" required>
+            </div>
+            <div class="form-group">
+                <label for="edit-birth">Fecha de Nacimiento:</label>
+                <input type="date" id="edit-birth">
+            </div>
+            <div class="form-group">
+                <label for="edit-country">País de Origen:</label>
+                <input type="text" id="edit-country">
+            </div>
+            <div class="form-group">
+                <label for="edit-description">Descripción:</label>
+                <textarea id="edit-description" rows="4"></textarea>
+            </div>
+            <div style="margin-top: 20px;">
+                <button type="submit" class="btn-success">💾 Guardar Cambios</button>
+                <button type="button" onclick="closeEditModal()" class="btn-danger">❌ Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Área de respuestas -->
+<div id="response" class="json-response" style="display: none;"></div>
+
+<script>
+    let allAuthors = [];
+    let currentEditId = null;
+
+    // Cargar autores al iniciar
+    window.onload = function() {
+        loadAuthors();
+    }
+
+    // Cargar lista de autores
+    async function loadAuthors() {
+        const response = await apiRequest('/api/authors');
+        
+        if (response.success && response.data.data) {
+            allAuthors = response.data.data;
+            displayAuthors(allAuthors);
+        } else {
+            document.getElementById('authors-list').innerHTML = `
+                <div class="alert alert-error">
+                    Error al cargar autores: ${response.error || 'Error desconocido'}
+                </div>
+            `;
+        }
+    }
+
+    // Mostrar autores en la lista
+    function displayAuthors(authors) {
+        const listDiv = document.getElementById('authors-list');
+        
+        if (authors.length === 0) {
+            listDiv.innerHTML = `
+                <div class="author-card">
+                    <p>No hay autores registrados.</p>
+                    <a href="/admin/authors/new" style="text-decoration: none;">
+                        <button class="btn-success">Crear el primer autor</button>
+                    </a>
+                </div>
+            `;
+            return;
+        }
+
+        const authorsHTML = authors.map(author => `
+            <div class="author-card">
+                <h4>${author.name}</h4>
+                <p><strong>País:</strong> ${author.country_of_origin || 'No especificado'}</p>
+                <p><strong>Fecha de nacimiento:</strong> ${author.date_of_birth || 'No especificada'}</p>
+                <p><strong>Descripción:</strong> ${author.description || 'Sin descripción'}</p>
+                <p><strong>Creado:</strong> ${new Date(author.created_at).toLocaleDateString()}</p>
+                
+                <div class="author-actions">
+                    <button onclick="editAuthor(${author.id})" class="btn-success">✏️ Editar</button>
+                    <button onclick="deleteAuthor(${author.id}, '${author.name}')" class="btn-danger">🗑️ Eliminar</button>
+                    <button onclick="viewAuthorJSON(${author.id})">👁️ Ver JSON</button>
+                </div>
+            </div>
+        `).join('');
+
+        listDiv.innerHTML = authorsHTML;
+    }
+
+    // Filtrar autores por búsqueda
+    function filterAuthors() {
+        const searchTerm = document.getElementById('search').value.toLowerCase();
+        const filteredAuthors = allAuthors.filter(author => 
+            author.name.toLowerCase().includes(searchTerm) ||
+            (author.country_of_origin && author.country_of_origin.toLowerCase().includes(searchTerm))
+        );
+        displayAuthors(filteredAuthors);
+    }
+
+    // Editar autor
+    function editAuthor(id) {
+        const author = allAuthors.find(a => a.id === id);
+        if (!author) return;
+
+        currentEditId = id;
+        document.getElementById('edit-name').value = author.name;
+        document.getElementById('edit-birth').value = author.date_of_birth || '';
+        document.getElementById('edit-country').value = author.country_of_origin || '';
+        document.getElementById('edit-description').value = author.description || '';
+        
+        document.getElementById('edit-modal').style.display = 'block';
+    }
+
+    // Cerrar modal de edición
+    function closeEditModal() {
+        document.getElementById('edit-modal').style.display = 'none';
+        currentEditId = null;
+    }
+
+    // Manejar envío del formulario de edición
+    document.getElementById('edit-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        if (!currentEditId) return;
+
+        const updateData = {
+            name: document.getElementById('edit-name').value,
+            date_of_birth: document.getElementById('edit-birth').value || null,
+            country_of_origin: document.getElementById('edit-country').value || null,
+            description: document.getElementById('edit-description').value || null
+        };
+
+        const response = await apiRequest(`/api/authors/${currentEditId}`, 'PUT', updateData);
+        showResponse('response', response);
+        
+        if (response.success) {
+            closeEditModal();
+            loadAuthors(); // Recargar la lista
+        }
+    });
+
+    // Eliminar autor
+    async function deleteAuthor(id, name) {
+        if (!confirm(`¿Estás seguro de que quieres eliminar al autor "${name}"?`)) {
+            return;
+        }
+
+        const response = await apiRequest(`/api/authors/${id}`, 'DELETE');
+        showResponse('response', response);
+        
+        if (response.success) {
+            loadAuthors(); // Recargar la lista
+        }
+    }
+
+    // Ver JSON de un autor específico
+    async function viewAuthorJSON(id) {
+        const response = await apiRequest(`/api/authors/${id}`);
+        showResponse('response', response);
+    }
+</script>
+{% endblock %}

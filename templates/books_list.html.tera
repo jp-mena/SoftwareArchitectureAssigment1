@@ -1,0 +1,219 @@
+{% extends "base" %}
+
+{% block title %}Lista de Libros - Book Reviews{% endblock %}
+
+{% block content %}
+<h2>📚 Lista de Libros</h2>
+
+<div style="margin-bottom: 20px;">
+    <a href="/admin/books/new" style="text-decoration: none;">
+        <button class="btn-success">➕ Crear Nuevo Libro</button>
+    </a>
+    <button onclick="loadBooks()">🔄 Actualizar Lista</button>
+    <a href="/admin" style="text-decoration: none;">
+        <button>🏠 Volver al Panel</button>
+    </a>
+</div>
+
+<!-- Área de búsqueda -->
+<div class="form-group">
+    <label for="search">🔍 Buscar libros:</label>
+    <input type="text" id="search" placeholder="Buscar por nombre, autor..." onkeyup="filterBooks()">
+</div>
+
+<!-- Lista de libros -->
+<div id="books-list">
+    <p>Cargando libros...</p>
+</div>
+
+<!-- Modal para editar libro -->
+<div id="edit-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 10px; width: 90%; max-width: 600px;">
+        <h3>✏️ Editar Libro</h3>
+        <form id="edit-form">
+            <div class="form-group">
+                <label for="edit-name">Nombre:</label>
+                <input type="text" id="edit-name" required>
+            </div>
+            <div class="form-group">
+                <label for="edit-summary">Resumen:</label>
+                <textarea id="edit-summary" rows="4"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="edit-publication">Fecha de Publicación:</label>
+                <input type="date" id="edit-publication">
+            </div>
+            <div class="form-group">
+                <label for="edit-sales">Número de Ventas:</label>
+                <input type="number" id="edit-sales" min="0">
+            </div>
+            <div class="form-group">
+                <label for="edit-author">ID del Autor:</label>
+                <input type="number" id="edit-author" min="1">
+            </div>
+            <div style="margin-top: 20px;">
+                <button type="submit" class="btn-success">💾 Guardar Cambios</button>
+                <button type="button" onclick="closeEditModal()" class="btn-danger">❌ Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Área de respuestas -->
+<div id="response" class="json-response" style="display: none;"></div>
+
+<script>
+    let allBooks = [];
+    let allAuthors = [];
+    let currentEditId = null;
+
+    // Cargar libros y autores al iniciar
+    window.onload = function() {
+        loadAuthors();
+        loadBooks();
+    }
+
+    // Cargar autores para mostrar nombres
+    async function loadAuthors() {
+        const response = await apiRequest('/api/authors');
+        if (response.success && response.data.data) {
+            allAuthors = response.data.data;
+        }
+    }
+
+    // Cargar lista de libros
+    async function loadBooks() {
+        const response = await apiRequest('/api/books');
+        
+        if (response.success && response.data.data) {
+            allBooks = response.data.data;
+            displayBooks(allBooks);
+        } else {
+            document.getElementById('books-list').innerHTML = `
+                <div class="alert alert-error">
+                    Error al cargar libros: ${response.error || 'Error desconocido'}
+                </div>
+            `;
+        }
+    }
+
+    // Mostrar libros en la lista
+    function displayBooks(books) {
+        const listDiv = document.getElementById('books-list');
+        
+        if (books.length === 0) {
+            listDiv.innerHTML = `
+                <div class="author-card">
+                    <p>No hay libros registrados.</p>
+                    <a href="/admin/books/new" style="text-decoration: none;">
+                        <button class="btn-success">Crear el primer libro</button>
+                    </a>
+                </div>
+            `;
+            return;
+        }
+
+        const booksHTML = books.map(book => {
+            const author = allAuthors.find(a => a.id === book.author_id);
+            const authorName = author ? author.name : `ID: ${book.author_id}`;
+            
+            return `
+                <div class="author-card">
+                    <h4>${book.name}</h4>
+                    <p><strong>Autor:</strong> ${authorName}</p>
+                    <p><strong>Resumen:</strong> ${book.summary || 'Sin resumen'}</p>
+                    <p><strong>Fecha de publicación:</strong> ${book.date_of_publication || 'No especificada'}</p>
+                    <p><strong>Ventas:</strong> ${book.number_of_sales.toLocaleString()}</p>
+                    <p><strong>Creado:</strong> ${new Date(book.created_at).toLocaleDateString()}</p>
+                    
+                    <div class="author-actions">
+                        <button onclick="editBook(${book.id})" class="btn-success">✏️ Editar</button>
+                        <button onclick="deleteBook(${book.id}, '${book.name}')" class="btn-danger">🗑️ Eliminar</button>
+                        <button onclick="viewBookJSON(${book.id})">👁️ Ver JSON</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        listDiv.innerHTML = booksHTML;
+    }
+
+    // Filtrar libros por búsqueda
+    function filterBooks() {
+        const searchTerm = document.getElementById('search').value.toLowerCase();
+        const filteredBooks = allBooks.filter(book => {
+            const author = allAuthors.find(a => a.id === book.author_id);
+            const authorName = author ? author.name.toLowerCase() : '';
+            
+            return book.name.toLowerCase().includes(searchTerm) ||
+                   authorName.includes(searchTerm) ||
+                   (book.summary && book.summary.toLowerCase().includes(searchTerm));
+        });
+        displayBooks(filteredBooks);
+    }
+
+    // Editar libro
+    function editBook(id) {
+        const book = allBooks.find(b => b.id === id);
+        if (!book) return;
+
+        currentEditId = id;
+        document.getElementById('edit-name').value = book.name;
+        document.getElementById('edit-summary').value = book.summary || '';
+        document.getElementById('edit-publication').value = book.date_of_publication || '';
+        document.getElementById('edit-sales').value = book.number_of_sales;
+        document.getElementById('edit-author').value = book.author_id;
+        
+        document.getElementById('edit-modal').style.display = 'block';
+    }
+
+    // Cerrar modal de edición
+    function closeEditModal() {
+        document.getElementById('edit-modal').style.display = 'none';
+        currentEditId = null;
+    }
+
+    // Manejar envío del formulario de edición
+    document.getElementById('edit-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        if (!currentEditId) return;
+
+        const updateData = {
+            name: document.getElementById('edit-name').value,
+            summary: document.getElementById('edit-summary').value || null,
+            date_of_publication: document.getElementById('edit-publication').value || null,
+            number_of_sales: parseInt(document.getElementById('edit-sales').value),
+            author_id: parseInt(document.getElementById('edit-author').value)
+        };
+
+        const response = await apiRequest(`/api/books/${currentEditId}`, 'PUT', updateData);
+        showResponse('response', response);
+        
+        if (response.success) {
+            closeEditModal();
+            loadBooks(); // Recargar la lista
+        }
+    });
+
+    // Eliminar libro
+    async function deleteBook(id, name) {
+        if (!confirm(`¿Estás seguro de que quieres eliminar el libro "${name}"?`)) {
+            return;
+        }
+
+        const response = await apiRequest(`/api/books/${id}`, 'DELETE');
+        showResponse('response', response);
+        
+        if (response.success) {
+            loadBooks(); // Recargar la lista
+        }
+    }
+
+    // Ver JSON de un libro específico
+    async function viewBookJSON(id) {
+        const response = await apiRequest(`/api/books/${id}`);
+        showResponse('response', response);
+    }
+</script>
+{% endblock %}

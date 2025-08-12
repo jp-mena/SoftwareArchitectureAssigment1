@@ -1,0 +1,294 @@
+{% extends "base" %}
+
+{% block title %}Crear Nuevo Libro - Book Reviews{% endblock %}
+
+{% block content %}
+<h2>➕ Crear Nuevo Libro</h2>
+
+<div style="margin-bottom: 20px;">
+    <a href="/admin/books" style="text-decoration: none;">
+        <button>← Volver a la Lista</button>
+    </a>
+    <a href="/admin" style="text-decoration: none;">
+        <button>🏠 Panel Principal</button>
+    </a>
+</div>
+
+<!-- Formulario principal -->
+<div class="form-container">
+    <form id="create-book-form">
+        <div class="form-group">
+            <label for="name">Nombre del Libro * :</label>
+            <input type="text" id="name" name="name" required 
+                   placeholder="Ej: Cien años de soledad">
+            <small>El nombre es obligatorio (máximo 500 caracteres)</small>
+        </div>
+
+        <div class="form-group">
+            <label for="author_id">Autor * :</label>
+            <select id="author_id" name="author_id" required>
+                <option value="">Seleccionar autor...</option>
+            </select>
+            <small>Selecciona el autor del libro</small>
+        </div>
+
+        <div class="form-group">
+            <label for="summary">Resumen del Libro:</label>
+            <textarea id="summary" name="summary" rows="6" 
+                      placeholder="Resumen, sinopsis o descripción del libro..."></textarea>
+            <small>Opcional - Máximo 2000 caracteres</small>
+        </div>
+
+        <div class="form-group">
+            <label for="date_of_publication">Fecha de Publicación:</label>
+            <input type="date" id="date_of_publication" name="date_of_publication">
+            <small>Opcional</small>
+        </div>
+
+        <div class="form-group">
+            <label for="number_of_sales">Número de Ventas:</label>
+            <input type="number" id="number_of_sales" name="number_of_sales" 
+                   min="0" placeholder="0">
+            <small>Opcional - Por defecto es 0</small>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-success">💾 Crear Libro</button>
+            <button type="button" onclick="clearForm()" class="btn-secondary">🔄 Limpiar Formulario</button>
+            <button type="button" onclick="fillExample()" class="btn-info">📝 Ejemplo</button>
+        </div>
+    </form>
+</div>
+
+<!-- Área de respuesta -->
+<div id="response" class="json-response" style="display: none;"></div>
+
+<!-- Vista previa -->
+<div id="preview" style="display: none; margin-top: 30px;">
+    <h3>👁️ Vista Previa</h3>
+    <div class="author-card" id="preview-content">
+    </div>
+</div>
+
+<script>
+    let allAuthors = [];
+
+    // Cargar autores al iniciar
+    window.onload = function() {
+        loadAuthors();
+    }
+
+    // Cargar lista de autores para el selector
+    async function loadAuthors() {
+        const response = await apiRequest('/api/authors');
+        
+        if (response.success && response.data.data) {
+            allAuthors = response.data.data;
+            populateAuthorSelect();
+        } else {
+            document.getElementById('author_id').innerHTML = 
+                '<option value="">Error cargando autores</option>';
+        }
+    }
+
+    // Poblar el selector de autores
+    function populateAuthorSelect() {
+        const select = document.getElementById('author_id');
+        select.innerHTML = '<option value="">Seleccionar autor...</option>';
+        
+        allAuthors.forEach(author => {
+            const option = document.createElement('option');
+            option.value = author.id;
+            option.textContent = `${author.name} (${author.country_of_origin || 'País no especificado'})`;
+            select.appendChild(option);
+        });
+    }
+
+    // Manejar envío del formulario
+    document.getElementById('create-book-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(e.target);
+        const bookData = {};
+        
+        // Recopilar datos del formulario
+        for (let [key, value] of formData.entries()) {
+            if (value.trim() !== '') {
+                if (key === 'author_id' || key === 'number_of_sales') {
+                    bookData[key] = parseInt(value);
+                } else {
+                    bookData[key] = value.trim();
+                }
+            }
+        }
+
+        // Validación básica
+        if (!bookData.name) {
+            alert('El nombre del libro es obligatorio');
+            return;
+        }
+        if (!bookData.author_id) {
+            alert('Debes seleccionar un autor');
+            return;
+        }
+
+        // Enviar petición
+        const response = await apiRequest('/api/books', 'POST', bookData);
+        showResponse('response', response);
+        
+        if (response.success) {
+            // Mostrar mensaje de éxito y limpiar formulario
+            setTimeout(() => {
+                if (confirm('Libro creado exitosamente. ¿Quieres ir a la lista de libros?')) {
+                    window.location.href = '/admin/books';
+                } else {
+                    clearForm();
+                }
+            }, 1000);
+        }
+    });
+
+    // Limpiar formulario
+    function clearForm() {
+        document.getElementById('create-book-form').reset();
+        hidePreview();
+    }
+
+    // Llenar con datos de ejemplo
+    function fillExample() {
+        document.getElementById('name').value = 'Cien años de soledad';
+        document.getElementById('summary').value = 'La novela narra la historia de la familia Buendía a lo largo de siete generaciones en el pueblo ficticio de Macondo. Es una obra maestra del realismo mágico que refleja la historia de América Latina.';
+        document.getElementById('date_of_publication').value = '1967-06-30';
+        document.getElementById('number_of_sales').value = '50000000';
+        
+        // Seleccionar un autor si hay disponibles
+        if (allAuthors.length > 0) {
+            const gabrielMarquez = allAuthors.find(a => a.name.includes('García Márquez'));
+            if (gabrielMarquez) {
+                document.getElementById('author_id').value = gabrielMarquez.id;
+            } else {
+                document.getElementById('author_id').value = allAuthors[0].id;
+            }
+        }
+        
+        showPreview();
+    }
+
+    // Mostrar vista previa mientras el usuario escribe
+    function showPreview() {
+        const name = document.getElementById('name').value;
+        const authorId = document.getElementById('author_id').value;
+        const summary = document.getElementById('summary').value;
+        const publication = document.getElementById('date_of_publication').value;
+        const sales = document.getElementById('number_of_sales').value;
+        
+        if (!name) {
+            hidePreview();
+            return;
+        }
+
+        const author = allAuthors.find(a => a.id == authorId);
+        const authorName = author ? author.name : 'Autor no seleccionado';
+
+        const previewHTML = `
+            <h4>${name}</h4>
+            <p><strong>Autor:</strong> ${authorName}</p>
+            <p><strong>Resumen:</strong> ${summary || 'Sin resumen'}</p>
+            <p><strong>Fecha de publicación:</strong> ${publication || 'No especificada'}</p>
+            <p><strong>Ventas:</strong> ${sales ? parseInt(sales).toLocaleString() : '0'}</p>
+        `;
+        
+        document.getElementById('preview-content').innerHTML = previewHTML;
+        document.getElementById('preview').style.display = 'block';
+    }
+
+    function hidePreview() {
+        document.getElementById('preview').style.display = 'none';
+    }
+
+    // Actualizar vista previa mientras el usuario escribe
+    document.getElementById('name').addEventListener('input', showPreview);
+    document.getElementById('author_id').addEventListener('change', showPreview);
+    document.getElementById('summary').addEventListener('input', showPreview);
+    document.getElementById('date_of_publication').addEventListener('input', showPreview);
+    document.getElementById('number_of_sales').addEventListener('input', showPreview);
+
+    // Contador de caracteres para el resumen
+    document.getElementById('summary').addEventListener('input', function() {
+        const current = this.value.length;
+        const max = 2000;
+        const small = this.nextElementSibling;
+        
+        if (current > max) {
+            this.value = this.value.substring(0, max);
+            small.textContent = `Máximo ${max} caracteres (límite alcanzado)`;
+            small.style.color = 'red';
+        } else {
+            small.textContent = `Opcional - ${current}/${max} caracteres`;
+            small.style.color = '#666';
+        }
+    });
+</script>
+
+<style>
+    .form-container {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 20px;
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .btn-secondary:hover {
+        background: #5a6268;
+    }
+
+    .btn-info {
+        background: #17a2b8;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .btn-info:hover {
+        background: #138496;
+    }
+
+    select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 16px;
+    }
+
+    small {
+        color: #666;
+        font-size: 0.9em;
+        margin-top: 5px;
+        display: block;
+    }
+
+    @media (max-width: 768px) {
+        .form-actions button {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+    }
+</style>
+{% endblock %}

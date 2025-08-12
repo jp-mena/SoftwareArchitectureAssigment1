@@ -8,12 +8,13 @@ rocket = { version = "0.5", features = ["json", "secrets"] }
 rocket_dyn_templates = { version = "0.2", features = ["tera"] }
 rocket_db_pools = { version = "0.2", features = ["sqlx_postgres"] }
 
-# sqlx alineado con rocket_db_pools con migraciones
-sqlx = { version = "0.8", features = ["migrate", "postgres", "runtime-tokio-rustls"] }
+# Necesitamos sqlx con features completas para que funcione
+sqlx = { version = "0.7", features = ["postgres", "chrono", "runtime-tokio-rustls", "macros"] }
 
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-validator = "0.20"
+validator = { version = "0.20", features = ["derive"] }
 uuid = { version = "1", features = ["serde", "v4"] }
 chrono = { version = "0.4", features = ["serde"] }
+anyhow = "1.0"
 

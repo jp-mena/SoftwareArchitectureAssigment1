@@ -1,0 +1,218 @@
+{% extends "base" %}
+
+{% block title %}Crear Nuevo Autor - Book Reviews{% endblock %}
+
+{% block content %}
+<h2>➕ Crear Nuevo Autor</h2>
+
+<div style="margin-bottom: 20px;">
+    <a href="/admin/authors" style="text-decoration: none;">
+        <button>← Volver a la Lista</button>
+    </a>
+</div>
+
+<!-- Formulario principal -->
+<div class="form-container">
+    <form id="create-author-form">
+        <div class="form-group">
+            <label for="name">Nombre * :</label>
+            <input type="text" id="name" name="name" required 
+                   placeholder="Ej: Gabriel García Márquez">
+            <small>El nombre es obligatorio</small>
+        </div>
+
+        <div class="form-group">
+            <label for="date_of_birth">Fecha de Nacimiento:</label>
+            <input type="date" id="date_of_birth" name="date_of_birth">
+            <small>Opcional</small>
+        </div>
+
+        <div class="form-group">
+            <label for="country_of_origin">País de Origen:</label>
+            <input type="text" id="country_of_origin" name="country_of_origin" 
+                   placeholder="Ej: Colombia">
+            <small>Opcional</small>
+        </div>
+
+        <div class="form-group">
+            <label for="description">Descripción:</label>
+            <textarea id="description" name="description" rows="6" 
+                      placeholder="Información biográfica, logros, estilo literario..."></textarea>
+            <small>Opcional - Máximo 1000 caracteres</small>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-success">💾 Crear Autor</button>
+            <button type="button" onclick="clearForm()" class="btn-secondary">🔄 Limpiar Formulario</button>
+            <button type="button" onclick="fillExample()" class="btn-info">📝 Ejemplo</button>
+        </div>
+    </form>
+</div>
+
+<!-- Área de respuesta -->
+<div id="response" class="json-response" style="display: none;"></div>
+
+<!-- Vista previa -->
+<div id="preview" style="display: none; margin-top: 30px;">
+    <h3>👁️ Vista Previa</h3>
+    <div class="author-card" id="preview-content">
+    </div>
+</div>
+
+<script>
+    // Manejar envío del formulario
+    document.getElementById('create-author-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(e.target);
+        const authorData = {};
+        
+        // Recopilar datos del formulario
+        for (let [key, value] of formData.entries()) {
+            if (value.trim() !== '') {
+                authorData[key] = value.trim();
+            }
+        }
+
+        // Validación básica
+        if (!authorData.name) {
+            alert('El nombre es obligatorio');
+            return;
+        }
+
+        // Enviar petición
+        const response = await apiRequest('/api/authors', 'POST', authorData);
+        showResponse('response', response);
+        
+        if (response.success) {
+            // Mostrar mensaje de éxito y limpiar formulario
+            setTimeout(() => {
+                if (confirm('Autor creado exitosamente. ¿Quieres ir a la lista de autores?')) {
+                    window.location.href = '/admin/authors';
+                } else {
+                    clearForm();
+                }
+            }, 1000);
+        }
+    });
+
+    // Limpiar formulario
+    function clearForm() {
+        document.getElementById('create-author-form').reset();
+        hidePreview();
+    }
+
+    // Llenar con datos de ejemplo
+    function fillExample() {
+        document.getElementById('name').value = 'Isabel Allende';
+        document.getElementById('date_of_birth').value = '1942-08-02';
+        document.getElementById('country_of_origin').value = 'Chile';
+        document.getElementById('description').value = 'Escritora chilena nacionalizada estadounidense. Autora de novelas como "La casa de los espíritus" y "Paula". Su obra combina realismo mágico con elementos autobiográficos y sociales.';
+        
+        showPreview();
+    }
+
+    // Mostrar vista previa mientras el usuario escribe
+    function showPreview() {
+        const name = document.getElementById('name').value;
+        const birth = document.getElementById('date_of_birth').value;
+        const country = document.getElementById('country_of_origin').value;
+        const description = document.getElementById('description').value;
+        
+        if (!name) {
+            hidePreview();
+            return;
+        }
+
+        const previewHTML = `
+            <h4>${name}</h4>
+            <p><strong>País:</strong> ${country || 'No especificado'}</p>
+            <p><strong>Fecha de nacimiento:</strong> ${birth || 'No especificada'}</p>
+            <p><strong>Descripción:</strong> ${description || 'Sin descripción'}</p>
+        `;
+        
+        document.getElementById('preview-content').innerHTML = previewHTML;
+        document.getElementById('preview').style.display = 'block';
+    }
+
+    function hidePreview() {
+        document.getElementById('preview').style.display = 'none';
+    }
+
+    // Actualizar vista previa mientras el usuario escribe
+    document.getElementById('name').addEventListener('input', showPreview);
+    document.getElementById('date_of_birth').addEventListener('input', showPreview);
+    document.getElementById('country_of_origin').addEventListener('input', showPreview);
+    document.getElementById('description').addEventListener('input', showPreview);
+
+    // Contador de caracteres para la descripción
+    document.getElementById('description').addEventListener('input', function() {
+        const current = this.value.length;
+        const max = 1000;
+        const small = this.nextElementSibling;
+        
+        if (current > max) {
+            this.value = this.value.substring(0, max);
+            small.textContent = `Máximo ${max} caracteres (límite alcanzado)`;
+            small.style.color = 'red';
+        } else {
+            small.textContent = `Opcional - ${current}/${max} caracteres`;
+            small.style.color = '#666';
+        }
+    });
+</script>
+
+<style>
+    .form-container {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 20px;
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .btn-secondary:hover {
+        background: #5a6268;
+    }
+
+    .btn-info {
+        background: #17a2b8;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .btn-info:hover {
+        background: #138496;
+    }
+
+    small {
+        color: #666;
+        font-size: 0.9em;
+        margin-top: 5px;
+        display: block;
+    }
+
+    @media (max-width: 768px) {
+        .form-actions button {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+    }
+</style>
+{% endblock %}
