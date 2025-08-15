@@ -5,6 +5,7 @@ mod authors;
 mod books;
 mod reviews;
 mod sales;
+mod simple_stats;
 
 use rocket::http::Status;
 use rocket::response::Redirect;
@@ -108,7 +109,7 @@ fn index() -> Redirect {
 #[launch]
 fn rocket() -> _ {
     rocket::build()
-        .attach(BookDb::init())
+        .attach(<BookDb as Database>::init())
         .attach(Template::fairing())
         .mount("/", routes![
             index, 
@@ -121,10 +122,12 @@ fn rocket() -> _ {
             admin_reviews_list,
             admin_reviews_new,
             admin_sales_list,
-            admin_sales_new
+            admin_sales_new,
+            simple_stats::admin_simple_author_stats
         ])
         .mount("/api", authors::routes())
         .mount("/api", books::routes())
         .mount("/api", reviews::routes())
         .mount("/api", sales::routes())
+        .mount("/api", routes![simple_stats::get_simple_author_stats])
 }

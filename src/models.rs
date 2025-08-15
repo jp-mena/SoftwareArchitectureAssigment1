@@ -168,3 +168,14 @@ pub struct UpdateSale {
     #[validate(range(min = 0, message = "Sales must be positive"))]
     pub sales: Option<i64>,
 }
+
+// ===============================
+// SIMPLE AUTHOR STATISTICS MODEL
+// ===============================
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct SimpleAuthorStats {
+    pub id: i32,
+    pub author_name: String,
+    pub total_books: i64,
+}

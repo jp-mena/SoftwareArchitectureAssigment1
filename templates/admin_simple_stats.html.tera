@@ -1,0 +1,88 @@
+{% extends "base" %}
+
+{% block title %}Estadísticas Simples de Autores - Book Reviews{% endblock %}
+
+{% block content %}
+<h2>📊 Estadísticas Simples de Autores</h2>
+
+<div style="margin-bottom: 20px;">
+    <a href="/admin" style="text-decoration: none;">
+        <button>⬅️ Volver al Panel</button>
+    </a>
+</div>
+
+<div class="author-card">
+    <h3>📈 Resumen de Autores y sus Libros</h3>
+    
+    {% if stats %}
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                <thead>
+                    <tr style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                        <th style="padding: 12px; text-align: left; border: 1px solid #dee2e6;">ID</th>
+                        <th style="padding: 12px; text-align: left; border: 1px solid #dee2e6;">👥 Autor</th>
+                        <th style="padding: 12px; text-align: center; border: 1px solid #dee2e6;">📚 Total de Libros</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stat in stats %}
+                    <tr style="border-bottom: 1px solid #dee2e6;">
+                        <td style="padding: 12px; border: 1px solid #dee2e6;">{{ stat.id }}</td>
+                        <td style="padding: 12px; border: 1px solid #dee2e6; font-weight: bold;">{{ stat.author_name }}</td>
+                        <td style="padding: 12px; text-align: center; border: 1px solid #dee2e6;">
+                            <span style="background-color: #e3f2fd; padding: 4px 8px; border-radius: 4px; font-weight: bold; color: #1976d2;">
+                                {{ stat.total_books }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div style="margin-top: 20px; padding: 15px; background-color: #f0f8e8; border-radius: 8px;">
+            <h4>📊 Resumen General</h4>
+            <p><strong>Total de autores:</strong> {{ stats | length }}</p>
+            <p><strong>Total de libros:</strong> 
+                {% set total_books = 0 %}
+                {% for stat in stats %}
+                    {% set_global total_books = total_books + stat.total_books %}
+                {% endfor %}
+                {{ total_books }}
+            </p>
+        </div>
+    {% else %}
+        <p style="color: #666; text-align: center; padding: 40px;">
+            📝 No hay estadísticas disponibles en este momento.
+        </p>
+    {% endif %}
+</div>
+
+<div style="margin-top: 20px;">
+    <h3>🔗 API Endpoint</h3>
+    <div class="author-card">
+        <p>Puedes acceder a estos datos en formato JSON en:</p>
+        <code style="background-color: #f8f9fa; padding: 8px; border-radius: 4px; display: block; margin: 10px 0;">
+            GET /api/simple-author-stats
+        </code>
+        <button onclick="testSimpleStatsAPI()" style="margin-top: 10px;">🔍 Probar API</button>
+        <div id="api-result" style="margin-top: 10px; font-family: monospace; background-color: #f8f9fa; padding: 10px; border-radius: 4px; display: none;"></div>
+    </div>
+</div>
+
+<script>
+async function testSimpleStatsAPI() {
+    const resultDiv = document.getElementById('api-result');
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = 'Cargando...';
+    
+    try {
+        const response = await fetch('/api/simple-author-stats');
+        const data = await response.json();
+        resultDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+    } catch (error) {
+        resultDiv.innerHTML = `<span style="color: red;">Error: ${error.message}</span>`;
+    }
+}
+</script>
+{% endblock %}

@@ -63,6 +63,17 @@
         </div>
     </div>
 
+    <!-- Tarjeta de Estadísticas Simples -->
+    <div class="author-card">
+        <h3>📊 Estadísticas Simples</h3>
+        <p>Resumen básico de autores y libros</p>
+        <div class="author-actions">
+            <a href="/admin/simple-author-stats" style="text-decoration: none;">
+                <button class="btn-success">📈 Ver Estadísticas</button>
+            </a>
+        </div>
+    </div>
+
     <!-- Tarjeta de API -->
     <div class="author-card">
         <h3>🔗 API Testing</h3>
