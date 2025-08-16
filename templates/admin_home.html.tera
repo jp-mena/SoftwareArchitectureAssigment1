@@ -96,6 +96,17 @@
         </div>
     </div>
 
+    <!-- Tarjeta de Búsqueda -->
+    <div class="author-card">
+        <h3>🔍 Búsqueda de Libros</h3>
+        <p>Buscar libros por descripción con paginación</p>
+        <div class="author-actions">
+            <a href="/admin/search" style="text-decoration: none;">
+                <button class="btn-success">🔎 Buscar Libros</button>
+            </a>
+        </div>
+    </div>
+
     <!-- Tarjeta de API -->
     <div class="author-card">
         <h3>🔗 API Testing</h3>

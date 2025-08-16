@@ -1,0 +1,315 @@
+{% extends "base" %}
+
+{% block title %}Búsqueda de Libros - Book Reviews{% endblock %}
+
+{% block content %}
+<h2>🔍 Búsqueda de Libros</h2>
+
+<div style="margin-bottom: 20px;">
+    <a href="/admin" style="text-decoration: none;">
+        <button>⬅️ Volver al Panel</button>
+    </a>
+</div>
+
+<div class="author-card">
+    <h3>📚 Buscar en Descripciones de Libros</h3>
+    
+    <!-- Barra de búsqueda -->
+    <div style="margin-bottom: 20px; padding: 20px; background-color: #f8f9fa; border-radius: 8px;">
+        <div style="display: flex; gap: 15px; align-items: end; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 300px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: bold;">🔍 Buscar palabras en descripción:</label>
+                <input type="text" id="search-input" placeholder="Ej: aventura misterio romance..." 
+                       style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;">
+                <small style="color: #666; display: block; margin-top: 4px;">
+                    Escribe una o más palabras. Se mostrarán libros que contengan cualquiera de estas palabras.
+                </small>
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 8px; font-weight: bold;">📄 Por página:</label>
+                <select id="per-page-select" style="padding: 12px; border: 1px solid #ddd; border-radius: 4px;">
+                    <option value="10">10 resultados</option>
+                    <option value="20">20 resultados</option>
+                    <option value="50">50 resultados</option>
+                </select>
+            </div>
+            
+            <div style="display: flex; gap: 10px;">
+                <button onclick="performSearch()" style="padding: 12px 20px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                    🔍 Buscar
+                </button>
+                <button onclick="clearSearch()" style="padding: 12px 20px; background-color: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    🗑️ Limpiar
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading indicator -->
+    <div id="loading" style="display: none; text-align: center; padding: 20px;">
+        <p>🔄 Buscando libros...</p>
+    </div>
+    
+    <!-- Información de resultados -->
+    <div id="search-info" style="display: none; margin-bottom: 15px; padding: 10px; background-color: #e3f2fd; border-radius: 4px; border-left: 4px solid #1976d2;">
+    </div>
+    
+    <!-- Resultados de búsqueda -->
+    <div id="search-results">
+        <div style="text-align: center; padding: 40px; color: #666;">
+            👆 Usa la barra de búsqueda para encontrar libros por descripción
+        </div>
+    </div>
+    
+    <!-- Controles de paginación -->
+    <div id="pagination-controls" style="display: none; margin-top: 20px; text-align: center;">
+    </div>
+</div>
+
+<div style="margin-top: 20px;">
+    <h3>🔗 API Endpoint</h3>
+    <div class="author-card">
+        <p>Puedes acceder a la búsqueda programáticamente:</p>
+        <code style="background-color: #f8f9fa; padding: 8px; border-radius: 4px; display: block; margin: 10px 0;">
+            GET /api/search-books?query=palabra&page=1&per_page=10
+        </code>
+        <button onclick="testSearchAPI()" style="margin-top: 10px;">🔍 Probar API</button>
+        <div id="api-result" style="margin-top: 10px; font-family: monospace; background-color: #f8f9fa; padding: 10px; border-radius: 4px; display: none;"></div>
+    </div>
+</div>
+
+<script>
+let currentSearchQuery = '';
+let currentPage = 1;
+let currentPerPage = 10;
+
+// Función para realizar la búsqueda
+async function performSearch(page = 1) {
+    const query = document.getElementById('search-input').value.trim();
+    const perPage = parseInt(document.getElementById('per-page-select').value);
+    
+    if (!query) {
+        alert('Por favor ingresa al menos una palabra para buscar');
+        return;
+    }
+    
+    currentSearchQuery = query;
+    currentPage = page;
+    currentPerPage = perPage;
+    
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('search-info').style.display = 'none';
+    
+    try {
+        const params = new URLSearchParams({
+            query: query,
+            page: page.toString(),
+            per_page: perPage.toString()
+        });
+        
+        const response = await fetch(`/admin/search/data?${params}`);
+        const data = await response.json();
+        
+        displayResults(data);
+        displayPagination(data);
+        displaySearchInfo(data);
+        
+    } catch (error) {
+        console.error('Error performing search:', error);
+        document.getElementById('search-results').innerHTML = 
+            '<div style="text-align: center; color: red; padding: 20px;">❌ Error al realizar la búsqueda</div>';
+    } finally {
+        document.getElementById('loading').style.display = 'none';
+    }
+}
+
+// Función para mostrar los resultados
+function displayResults(data) {
+    const container = document.getElementById('search-results');
+    
+    if (!data.results || data.results.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #666;">
+                📚 No se encontraron libros que contengan las palabras: "${currentSearchQuery}"
+                <br><br>
+                <small>Prueba con otras palabras o términos más generales</small>
+            </div>
+        `;
+        return;
+    }
+    
+    const resultsHtml = data.results.map(book => {
+        const summaryPreview = book.summary 
+            ? (book.summary.length > 200 ? book.summary.substring(0, 200) + '...' : book.summary)
+            : 'Sin descripción disponible';
+        
+        const publicationDate = book.date_of_publication 
+            ? new Date(book.date_of_publication).getFullYear()
+            : 'N/A';
+        
+        const salesFormatted = Number(book.total_sales).toLocaleString();
+        const ratingFormatted = Number(book.average_rating).toFixed(2);
+        
+        // Resaltar palabras de búsqueda en la descripción
+        let highlightedSummary = summaryPreview;
+        const searchWords = currentSearchQuery.toLowerCase().split(/\s+/);
+        searchWords.forEach(word => {
+            if (word.length > 2) { // Solo resaltar palabras de más de 2 caracteres
+                const regex = new RegExp(`(${word})`, 'gi');
+                highlightedSummary = highlightedSummary.replace(regex, '<mark style="background-color: #fff3cd; padding: 1px 2px;">$1</mark>');
+            }
+        });
+        
+        return `
+            <div style="border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin-bottom: 15px; background-color: #fff;">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                    <div style="flex: 1;">
+                        <h4 style="margin: 0 0 5px 0; color: #1976d2;">${book.title}</h4>
+                        <p style="margin: 0; color: #666; font-weight: 500;">👥 ${book.author_name}</p>
+                        <small style="color: #999;">📅 Publicado: ${publicationDate}</small>
+                    </div>
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                        <div style="text-align: center;">
+                            <div style="background-color: #e8f5e8; padding: 6px 10px; border-radius: 8px; color: #2e7d32;">
+                                <strong>${salesFormatted}</strong>
+                            </div>
+                            <small style="color: #666;">💰 Ventas</small>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="background-color: #fff3e0; padding: 6px 10px; border-radius: 8px; color: #f57c00;">
+                                <strong>${ratingFormatted} ⭐</strong>
+                            </div>
+                            <small style="color: #666;">${book.total_reviews} reseñas</small>
+                        </div>
+                    </div>
+                </div>
+                <div style="background-color: #f8f9fa; padding: 15px; border-radius: 6px; border-left: 4px solid #007bff;">
+                    <strong style="color: #333; display: block; margin-bottom: 8px;">📋 Descripción:</strong>
+                    <p style="margin: 0; line-height: 1.5; color: #555;">${highlightedSummary}</p>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    container.innerHTML = resultsHtml;
+}
+
+// Función para mostrar información de la búsqueda
+function displaySearchInfo(data) {
+    const infoDiv = document.getElementById('search-info');
+    const totalResults = data.total_count;
+    const currentPageNum = data.page;
+    const totalPages = data.total_pages;
+    const showingFrom = ((currentPageNum - 1) * data.per_page) + 1;
+    const showingTo = Math.min(currentPageNum * data.per_page, totalResults);
+    
+    infoDiv.innerHTML = `
+        <strong>🔍 Búsqueda:</strong> "${currentSearchQuery}" | 
+        <strong>📊 Resultados:</strong> ${totalResults} libros encontrados | 
+        <strong>📄 Mostrando:</strong> ${showingFrom}-${showingTo} (Página ${currentPageNum} de ${totalPages})
+    `;
+    infoDiv.style.display = 'block';
+}
+
+// Función para mostrar controles de paginación
+function displayPagination(data) {
+    const paginationDiv = document.getElementById('pagination-controls');
+    
+    if (data.total_pages <= 1) {
+        paginationDiv.style.display = 'none';
+        return;
+    }
+    
+    let paginationHtml = '<div style="display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap;">';
+    
+    // Botón anterior
+    if (data.has_prev) {
+        paginationHtml += `<button onclick="performSearch(${data.page - 1})" style="padding: 8px 12px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">⬅️ Anterior</button>`;
+    }
+    
+    // Números de página
+    const startPage = Math.max(1, data.page - 2);
+    const endPage = Math.min(data.total_pages, data.page + 2);
+    
+    if (startPage > 1) {
+        paginationHtml += `<button onclick="performSearch(1)" style="padding: 8px 12px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer;">1</button>`;
+        if (startPage > 2) {
+            paginationHtml += '<span style="padding: 8px;">...</span>';
+        }
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+        const isActive = i === data.page;
+        const buttonStyle = isActive 
+            ? 'padding: 8px 12px; background-color: #007bff; color: white; border: none; border-radius: 4px; font-weight: bold;'
+            : 'padding: 8px 12px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer;';
+        
+        if (isActive) {
+            paginationHtml += `<span style="${buttonStyle}">${i}</span>`;
+        } else {
+            paginationHtml += `<button onclick="performSearch(${i})" style="${buttonStyle}">${i}</button>`;
+        }
+    }
+    
+    if (endPage < data.total_pages) {
+        if (endPage < data.total_pages - 1) {
+            paginationHtml += '<span style="padding: 8px;">...</span>';
+        }
+        paginationHtml += `<button onclick="performSearch(${data.total_pages})" style="padding: 8px 12px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer;">${data.total_pages}</button>`;
+    }
+    
+    // Botón siguiente
+    if (data.has_next) {
+        paginationHtml += `<button onclick="performSearch(${data.page + 1})" style="padding: 8px 12px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Siguiente ➡️</button>`;
+    }
+    
+    paginationHtml += '</div>';
+    
+    paginationDiv.innerHTML = paginationHtml;
+    paginationDiv.style.display = 'block';
+}
+
+// Función para limpiar la búsqueda
+function clearSearch() {
+    document.getElementById('search-input').value = '';
+    document.getElementById('per-page-select').value = '10';
+    document.getElementById('search-results').innerHTML = `
+        <div style="text-align: center; padding: 40px; color: #666;">
+            👆 Usa la barra de búsqueda para encontrar libros por descripción
+        </div>
+    `;
+    document.getElementById('search-info').style.display = 'none';
+    document.getElementById('pagination-controls').style.display = 'none';
+    
+    currentSearchQuery = '';
+    currentPage = 1;
+    currentPerPage = 10;
+}
+
+// Función para probar la API
+async function testSearchAPI() {
+    const resultDiv = document.getElementById('api-result');
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = 'Cargando...';
+    
+    try {
+        const response = await fetch('/api/search-books?query=aventura&page=1&per_page=5');
+        const data = await response.json();
+        resultDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+    } catch (error) {
+        resultDiv.innerHTML = `<span style="color: red;">Error: ${error.message}</span>`;
+    }
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Buscar al presionar Enter
+    document.getElementById('search-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+    });
+});
+</script>
+{% endblock %}
