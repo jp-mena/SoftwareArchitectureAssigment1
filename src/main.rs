@@ -123,7 +123,8 @@ fn rocket() -> _ {
             admin_reviews_new,
             admin_sales_list,
             admin_sales_new,
-            simple_stats::admin_simple_author_stats
+            simple_stats::admin_simple_author_stats,
+            simple_stats::admin_simple_stats_data
         ])
         .mount("/api", authors::routes())
         .mount("/api", books::routes())

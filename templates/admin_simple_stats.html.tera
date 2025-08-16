@@ -14,75 +14,201 @@
 <div class="author-card">
     <h3>📈 Resumen de Autores y sus Libros</h3>
     
-    {% if stats %}
-        <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-                <thead>
-                    <tr style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
-                        <th style="padding: 12px; text-align: left; border: 1px solid #dee2e6;">ID</th>
-                        <th style="padding: 12px; text-align: left; border: 1px solid #dee2e6;">👥 Autor</th>
-                        <th style="padding: 12px; text-align: center; border: 1px solid #dee2e6;">📚 Total de Libros</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for stat in stats %}
-                    <tr style="border-bottom: 1px solid #dee2e6;">
-                        <td style="padding: 12px; border: 1px solid #dee2e6;">{{ stat.id }}</td>
-                        <td style="padding: 12px; border: 1px solid #dee2e6; font-weight: bold;">{{ stat.author_name }}</td>
-                        <td style="padding: 12px; text-align: center; border: 1px solid #dee2e6;">
-                            <span style="background-color: #e3f2fd; padding: 4px 8px; border-radius: 4px; font-weight: bold; color: #1976d2;">
-                                {{ stat.total_books }}
-                            </span>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <!-- Controles de Filtro Simples -->
+    <div style="margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 8px;">
+        <h4>🔍 Filtros Simples</h4>
+        <div style="display: flex; gap: 15px; margin-top: 10px; flex-wrap: wrap;">
+            <!-- Filtro por nombre -->
+            <div>
+                <label style="font-weight: bold;">👥 Buscar por nombre:</label>
+                <input type="text" id="filter-name" placeholder="Nombre del autor..." 
+                       style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-left: 10px;">
+            </div>
+            
+            <!-- Filtro por libros mínimos -->
+            <div>
+                <label style="font-weight: bold;">📚 Mín. libros:</label>
+                <input type="number" id="filter-books" min="0" placeholder="0" 
+                       style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-left: 10px; width: 80px;">
+            </div>
+            
+            <!-- Botones de acción -->
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <button onclick="applyFilters()" style="padding: 8px 16px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    🔍 Filtrar
+                </button>
+                <button onclick="clearFilters()" style="padding: 8px 16px; background-color: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    🗑️ Limpiar
+                </button>
+            </div>
         </div>
-        
-        <div style="margin-top: 20px; padding: 15px; background-color: #f0f8e8; border-radius: 8px;">
-            <h4>📊 Resumen General</h4>
-            <p><strong>Total de autores:</strong> {{ stats | length }}</p>
-            <p><strong>Total de libros:</strong> 
-                {% set total_books = 0 %}
-                {% for stat in stats %}
-                    {% set_global total_books = total_books + stat.total_books %}
-                {% endfor %}
-                {{ total_books }}
-            </p>
-        </div>
-    {% else %}
-        <p style="color: #666; text-align: center; padding: 40px;">
-            📝 No hay estadísticas disponibles en este momento.
-        </p>
-    {% endif %}
-</div>
-
-<div style="margin-top: 20px;">
-    <h3>🔗 API Endpoint</h3>
-    <div class="author-card">
-        <p>Puedes acceder a estos datos en formato JSON en:</p>
-        <code style="background-color: #f8f9fa; padding: 8px; border-radius: 4px; display: block; margin: 10px 0;">
-            GET /api/simple-author-stats
-        </code>
-        <button onclick="testSimpleStatsAPI()" style="margin-top: 10px;">🔍 Probar API</button>
-        <div id="api-result" style="margin-top: 10px; font-family: monospace; background-color: #f8f9fa; padding: 10px; border-radius: 4px; display: none;"></div>
+    </div>
+    
+    <!-- Loading indicator -->
+    <div id="loading" style="display: none; text-align: center; padding: 20px;">
+        <p>🔄 Cargando estadísticas...</p>
+    </div>
+    
+    <!-- Stats table container -->
+    <div id="stats-container">
+        <!-- La tabla se cargará aquí dinámicamente -->
     </div>
 </div>
 
 <script>
-async function testSimpleStatsAPI() {
-    const resultDiv = document.getElementById('api-result');
-    resultDiv.style.display = 'block';
-    resultDiv.innerHTML = 'Cargando...';
+let currentSort = { column: 'name', order: 'asc' };
+
+// Función para cargar estadísticas
+async function loadStats(params = {}) {
+    document.getElementById('loading').style.display = 'block';
     
     try {
-        const response = await fetch('/api/simple-author-stats');
+        const queryString = new URLSearchParams(params).toString();
+        const url = `/admin/simple-stats/data${queryString ? '?' + queryString : ''}`;
+        
+        const response = await fetch(url);
         const data = await response.json();
-        resultDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        
+        renderTable(data);
     } catch (error) {
-        resultDiv.innerHTML = `<span style="color: red;">Error: ${error.message}</span>`;
+        console.error('Error loading stats:', error);
+        document.getElementById('stats-container').innerHTML = 
+            '<div style="text-align: center; color: red; padding: 20px;">❌ Error al cargar estadísticas</div>';
+    } finally {
+        document.getElementById('loading').style.display = 'none';
     }
 }
+
+// Función para renderizar la tabla
+function renderTable(data) {
+    const container = document.getElementById('stats-container');
+    
+    if (!data || data.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 20px;">📝 No se encontraron estadísticas</div>';
+        return;
+    }
+    
+    const getSortIcon = (column) => {
+        if (currentSort.column === column) {
+            return currentSort.order === 'asc' ? ' ⬆️' : ' ⬇️';
+        }
+        return '';
+    };
+    
+    const table = `
+        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <thead>
+                <tr style="background-color: #e9ecef;">
+                    <th style="padding: 12px; text-align: left; border: 1px solid #dee2e6; cursor: pointer;" onclick="sortBy('name')">
+                        👥 Autor${getSortIcon('name')}
+                    </th>
+                    <th style="padding: 12px; text-align: center; border: 1px solid #dee2e6; cursor: pointer;" onclick="sortBy('books')">
+                        📚 Libros${getSortIcon('books')}
+                    </th>
+                    <th style="padding: 12px; text-align: center; border: 1px solid #dee2e6; cursor: pointer;" onclick="sortBy('rating')">
+                        ⭐ Rating${getSortIcon('rating')}
+                    </th>
+                    <th style="padding: 12px; text-align: center; border: 1px solid #dee2e6; cursor: pointer;" onclick="sortBy('sales')">
+                        💰 Ventas${getSortIcon('sales')}
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                ${data.map(stat => `
+                    <tr style="border-bottom: 1px solid #dee2e6;">
+                        <td style="padding: 10px; border: 1px solid #dee2e6;">
+                            <strong>${stat.author_name}</strong>
+                        </td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">
+                            <span style="background-color: #e3f2fd; padding: 4px 8px; border-radius: 12px; color: #1976d2;">
+                                ${stat.total_books}
+                            </span>
+                        </td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">
+                            <span style="background-color: #fff3e0; padding: 4px 8px; border-radius: 12px; color: #f57c00;">
+                                ${Number(stat.average_rating).toFixed(2)}
+                            </span>
+                        </td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">
+                            <span style="background-color: #e8f5e8; padding: 4px 8px; border-radius: 12px; color: #388e3c;">
+                                $${Number(stat.total_sales).toLocaleString()}
+                            </span>
+                        </td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+        
+        <div style="margin-top: 15px; text-align: center; color: #666;">
+            📊 Mostrando ${data.length} autor(es)
+        </div>
+    `;
+    
+    container.innerHTML = table;
+}
+
+// Función para aplicar filtros
+function applyFilters() {
+    const params = {};
+    
+    const filterName = document.getElementById('filter-name').value.trim();
+    if (filterName) params.filter_name = filterName;
+    
+    const minBooks = document.getElementById('filter-books').value;
+    if (minBooks) params.min_books = minBooks;
+    
+    // Incluir ordenamiento actual
+    params.sort_by = currentSort.column;
+    params.sort_order = currentSort.order;
+    
+    loadStats(params);
+}
+
+// Función para limpiar filtros
+function clearFilters() {
+    document.getElementById('filter-name').value = '';
+    document.getElementById('filter-books').value = '';
+    
+    // Mantener ordenamiento pero sin filtros
+    const params = {
+        sort_by: currentSort.column,
+        sort_order: currentSort.order
+    };
+    
+    loadStats(params);
+}
+
+// Función para ordenar por columna (click en header)
+function sortBy(column) {
+    if (currentSort.column === column) {
+        // Si ya está ordenado por esta columna, cambiar orden
+        currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc';
+    } else {
+        // Si es nueva columna, ordenar ascendente
+        currentSort.column = column;
+        currentSort.order = 'asc';
+    }
+    
+    // Aplicar filtros actuales con nuevo ordenamiento
+    applyFilters();
+}
+
+// Cargar datos iniciales al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    loadStats();
+    
+    // Aplicar filtros al presionar Enter
+    document.getElementById('filter-name').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            applyFilters();
+        }
+    });
+    
+    document.getElementById('filter-books').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            applyFilters();
+        }
+    });
+});
 </script>
 {% endblock %}

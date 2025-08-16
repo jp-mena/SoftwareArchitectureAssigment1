@@ -178,4 +178,6 @@ pub struct SimpleAuthorStats {
     pub id: i32,
     pub author_name: String,
     pub total_books: i64,
+    pub average_rating: f64,
+    pub total_sales: i64,
 }
