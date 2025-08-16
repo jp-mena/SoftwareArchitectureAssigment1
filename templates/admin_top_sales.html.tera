@@ -1,0 +1,233 @@
+{% extends "base" %}
+
+{% block title %}Top 50 Libros Más Vendidos - Book Reviews{% endblock %}
+
+{% block content %}
+<h2>💰 Top 50 Libros Más Vendidos de Todos los Tiempos</h2>
+
+<div style="margin-bottom: 20px;">
+    <a href="/admin" style="text-decoration: none;">
+        <button>⬅️ Volver al Panel</button>
+    </a>
+</div>
+
+<div class="author-card">
+    <h3>📈 Top 50 con Análisis Completo de Ventas</h3>
+    
+    <!-- Loading indicator -->
+    <div id="loading" style="display: none; text-align: center; padding: 20px;">
+        <p>🔄 Cargando top ventas...</p>
+    </div>
+    
+    <!-- Top sales container -->
+    <div id="sales-container">
+        <!-- La tabla se cargará aquí dinámicamente -->
+    </div>
+</div>
+
+<div style="margin-top: 20px;">
+    <h3>🔗 API Endpoint</h3>
+    <div class="author-card">
+        <p>Puedes acceder a estos datos en formato JSON en:</p>
+        <code style="background-color: #f8f9fa; padding: 8px; border-radius: 4px; display: block; margin: 10px 0;">
+            GET /admin/top-sales/data
+        </code>
+        <button onclick="testTopSalesAPI()" style="margin-top: 10px;">🔍 Probar API</button>
+        <div id="api-result" style="margin-top: 10px; font-family: monospace; background-color: #f8f9fa; padding: 10px; border-radius: 4px; display: none;"></div>
+    </div>
+</div>
+
+<script>
+// Función para cargar el top de ventas
+async function loadTopSales() {
+    document.getElementById('loading').style.display = 'block';
+    
+    try {
+        const response = await fetch('/admin/top-sales/data');
+        const data = await response.json();
+        
+        renderSalesTable(data);
+    } catch (error) {
+        console.error('Error loading top sales:', error);
+        document.getElementById('sales-container').innerHTML = 
+            '<div style="text-align: center; color: red; padding: 20px;">❌ Error al cargar el top de ventas</div>';
+    } finally {
+        document.getElementById('loading').style.display = 'none';
+    }
+}
+
+// Función para renderizar la tabla de ventas
+function renderSalesTable(data) {
+    const container = document.getElementById('sales-container');
+    
+    if (!data || data.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 20px;">📝 No se encontraron libros con ventas</div>';
+        return;
+    }
+    
+    const table = `
+        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <thead>
+                <tr style="background-color: #e9ecef;">
+                    <th style="padding: 12px; text-align: center; border: 1px solid #dee2e6; width: 60px;">
+                        🏆 Pos.
+                    </th>
+                    <th style="padding: 12px; text-align: left; border: 1px solid #dee2e6;">
+                        📖 Título del Libro
+                    </th>
+                    <th style="padding: 12px; text-align: left; border: 1px solid #dee2e6;">
+                        👥 Autor
+                    </th>
+                    <th style="padding: 12px; text-align: center; border: 1px solid #dee2e6;">
+                        💰 Ventas del Libro
+                    </th>
+                    <th style="padding: 12px; text-align: center; border: 1px solid #dee2e6;">
+                        📊 Ventas del Autor
+                    </th>
+                    <th style="padding: 12px; text-align: center; border: 1px solid #dee2e6;">
+                        🏅 Top 5 del Año
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                ${data.map((book, index) => {
+                    const position = index + 1;
+                    let positionDisplay;
+                    
+                    if (position === 1) {
+                        positionDisplay = '<span style="font-size: 1.2em;">🥇</span>';
+                    } else if (position === 2) {
+                        positionDisplay = '<span style="font-size: 1.2em;">🥈</span>';
+                    } else if (position === 3) {
+                        positionDisplay = '<span style="font-size: 1.2em;">🥉</span>';
+                    } else if (position <= 10) {
+                        positionDisplay = '<span style="font-size: 1.1em;">🏆</span>';
+                    } else {
+                        positionDisplay = position + '°';
+                    }
+                    
+                    const bookSalesFormatted = Number(book.total_sales).toLocaleString();
+                    const authorSalesFormatted = Number(book.author_total_sales).toLocaleString();
+                    
+                    // Color coding for book sales
+                    let bookSalesColor = '#388e3c';
+                    let bookSalesBg = '#e8f5e8';
+                    
+                    if (book.total_sales >= 1000000) {
+                        bookSalesColor = '#d32f2f';
+                        bookSalesBg = '#ffebee';
+                    } else if (book.total_sales >= 100000) {
+                        bookSalesColor = '#f57c00';
+                        bookSalesBg = '#fff3e0';
+                    } else if (book.total_sales >= 10000) {
+                        bookSalesColor = '#1976d2';
+                        bookSalesBg = '#e3f2fd';
+                    }
+                    
+                    // Color coding for author sales
+                    let authorSalesColor = '#6a1b9a';
+                    let authorSalesBg = '#f3e5f5';
+                    
+                    if (book.author_total_sales >= 5000000) {
+                        authorSalesColor = '#4a148c';
+                        authorSalesBg = '#e1bee7';
+                    } else if (book.author_total_sales >= 1000000) {
+                        authorSalesColor = '#7b1fa2';
+                        authorSalesBg = '#e8d5e9';
+                    }
+                    
+                    // Top 5 indicator
+                    const top5Indicator = book.was_top5_in_publication_year 
+                        ? '<span style="background-color: #fff8e1; color: #f57c00; padding: 4px 8px; border-radius: 12px; font-weight: bold;">🏅 SÍ</span>'
+                        : '<span style="background-color: #f5f5f5; color: #666; padding: 4px 8px; border-radius: 12px;">❌ No</span>';
+                    
+                    const publicationYear = book.publication_year ? book.publication_year : 'N/A';
+                    
+                    return `
+                        <tr style="border-bottom: 1px solid #dee2e6;">
+                            <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">
+                                <strong>${positionDisplay}</strong><br>
+                                <small>${position}°</small>
+                            </td>
+                            <td style="padding: 10px; border: 1px solid #dee2e6;">
+                                <strong style="color: #1976d2;">${book.title}</strong>
+                                ${book.publication_year ? `<br><small style="color: #666;">Publicado: ${publicationYear}</small>` : ''}
+                            </td>
+                            <td style="padding: 10px; border: 1px solid #dee2e6;">
+                                <strong>${book.author_name}</strong>
+                            </td>
+                            <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">
+                                <span style="background-color: ${bookSalesBg}; padding: 6px 10px; border-radius: 12px; color: ${bookSalesColor}; font-weight: bold;">
+                                    ${bookSalesFormatted}
+                                </span>
+                            </td>
+                            <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">
+                                <span style="background-color: ${authorSalesBg}; padding: 6px 10px; border-radius: 12px; color: ${authorSalesColor}; font-weight: bold;">
+                                    ${authorSalesFormatted}
+                                </span>
+                            </td>
+                            <td style="padding: 10px; text-align: center; border: 1px solid #dee2e6;">
+                                ${top5Indicator}
+                            </td>
+                        </tr>
+                    `;
+                }).join('')}
+            </tbody>
+        </table>
+        
+        <div style="margin-top: 20px; padding: 15px; background-color: #f0f8e8; border-radius: 8px;">
+            <h4>📊 Resumen del Top 50</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                <div>
+                    <strong>🥇 Libro más vendido:</strong><br>
+                    <span style="color: #1976d2;">${data[0]?.title || 'N/A'}</span><br>
+                    <small>Ventas: ${data[0] ? Number(data[0].total_sales).toLocaleString() : 'N/A'}</small>
+                </div>
+                <div>
+                    <strong>� Autor más exitoso:</strong><br>
+                    <span style="color: #7b1fa2;">
+                        ${data.length > 0 ? data.reduce((max, book) => book.author_total_sales > max.author_total_sales ? book : max, data[0]).author_name : 'N/A'}
+                    </span><br>
+                    <small>Ventas totales: ${data.length > 0 ? Number(data.reduce((max, book) => book.author_total_sales > max.author_total_sales ? book : max, data[0]).author_total_sales).toLocaleString() : 'N/A'}</small>
+                </div>
+                <div>
+                    <strong>🏅 Libros que fueron Top 5:</strong><br>
+                    <span style="color: #f57c00; font-size: 1.2em; font-weight: bold;">
+                        ${data.filter(book => book.was_top5_in_publication_year).length}
+                    </span><br>
+                    <small>de 50 libros (${((data.filter(book => book.was_top5_in_publication_year).length / data.length) * 100).toFixed(1)}%)</small>
+                </div>
+                <div>
+                    <strong>📈 Ventas totales combinadas:</strong><br>
+                    <span style="color: #d32f2f; font-size: 1.2em; font-weight: bold;">
+                        ${data.reduce((sum, book) => sum + book.total_sales, 0).toLocaleString()}
+                    </span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML = table;
+}
+
+// Función para probar la API
+async function testTopSalesAPI() {
+    const resultDiv = document.getElementById('api-result');
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = 'Cargando...';
+    
+    try {
+        const response = await fetch('/admin/top-sales/data');
+        const data = await response.json();
+        resultDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+    } catch (error) {
+        resultDiv.innerHTML = `<span style="color: red;">Error: ${error.message}</span>`;
+    }
+}
+
+// Cargar datos iniciales al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    loadTopSales();
+});
+</script>
+{% endblock %}

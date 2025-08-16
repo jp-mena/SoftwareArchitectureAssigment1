@@ -7,6 +7,7 @@ mod reviews;
 mod sales;
 mod simple_stats;
 mod top_books;
+mod top_sales;
 
 use rocket::http::Status;
 use rocket::response::Redirect;
@@ -134,7 +135,9 @@ fn rocket() -> _ {
             simple_stats::admin_simple_author_stats,
             simple_stats::admin_simple_stats_data,
             top_books::admin_top_books,
-            top_books::admin_top_books_data
+            top_books::admin_top_books_data,
+            top_sales::admin_top_sales,
+            top_sales::admin_top_sales_data
         ])
         .mount("/api", authors::routes())
         .mount("/api", books::routes())
@@ -142,4 +145,5 @@ fn rocket() -> _ {
         .mount("/api", sales::routes())
         .mount("/api", routes![simple_stats::get_simple_author_stats])
         .mount("/api", routes![top_books::get_top_books])
+        .mount("/api", routes![top_sales::get_top_sales])
 }

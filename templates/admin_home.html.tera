@@ -85,6 +85,17 @@
         </div>
     </div>
 
+    <!-- Tarjeta de Top Ventas -->
+    <div class="author-card">
+        <h3>💰 Top 50 Ventas</h3>
+        <p>Los libros más vendidos de todos los tiempos</p>
+        <div class="author-actions">
+            <a href="/admin/top-sales" style="text-decoration: none;">
+                <button class="btn-success">📈 Ver Top 50</button>
+            </a>
+        </div>
+    </div>
+
     <!-- Tarjeta de API -->
     <div class="author-card">
         <h3>🔗 API Testing</h3>
