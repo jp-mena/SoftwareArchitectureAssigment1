@@ -6,6 +6,7 @@ mod books;
 mod reviews;
 mod sales;
 mod simple_stats;
+mod top_books;
 
 use rocket::http::Status;
 use rocket::response::Redirect;
@@ -100,6 +101,13 @@ fn admin_sales_new() -> Template {
     Template::render("sales_new", context! {})
 }
 
+// === TOP BOOKS ADMIN ROUTES ===
+
+#[get("/admin/top-books")]
+fn admin_top_books_route() -> Template {
+    Template::render("admin_top_books", context! {})
+}
+
 // Redirección desde raíz a admin
 #[get("/")]
 fn index() -> Redirect {
@@ -124,11 +132,14 @@ fn rocket() -> _ {
             admin_sales_list,
             admin_sales_new,
             simple_stats::admin_simple_author_stats,
-            simple_stats::admin_simple_stats_data
+            simple_stats::admin_simple_stats_data,
+            top_books::admin_top_books,
+            top_books::admin_top_books_data
         ])
         .mount("/api", authors::routes())
         .mount("/api", books::routes())
         .mount("/api", reviews::routes())
         .mount("/api", sales::routes())
         .mount("/api", routes![simple_stats::get_simple_author_stats])
+        .mount("/api", routes![top_books::get_top_books])
 }

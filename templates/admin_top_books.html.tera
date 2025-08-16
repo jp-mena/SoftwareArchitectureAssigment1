@@ -1,0 +1,195 @@
+{% extends "base" %}
+
+{% block title %}Top 10 Libros Mejor Valorados - Book Reviews{% endblock %}
+
+{% block content %}
+<h2>🏆 Top 10 Libros Mejor Valorados</h2>
+
+<div style="margin-bottom: 20px;">
+    <a href="/admin" style="text-decoration: none;">
+        <button>⬅️ Volver al Panel</button>
+    </a>
+</div>
+
+<div class="author-card">
+    <h3>📚 Los Mejores Libros con sus Mejores y Peores Reseñas</h3>
+    
+    <!-- Loading indicator -->
+    <div id="loading" style="display: none; text-align: center; padding: 20px;">
+        <p>🔄 Cargando top libros...</p>
+    </div>
+    
+    <!-- Top books container -->
+    <div id="books-container">
+        <!-- La tabla se cargará aquí dinámicamente -->
+    </div>
+</div>
+
+<div style="margin-top: 20px;">
+    <h3>🔗 API Endpoint</h3>
+    <div class="author-card">
+        <p>Puedes acceder a estos datos en formato JSON en:</p>
+        <code style="background-color: #f8f9fa; padding: 8px; border-radius: 4px; display: block; margin: 10px 0;">
+            GET /admin/top-books/data
+        </code>
+        <button onclick="testTopBooksAPI()" style="margin-top: 10px;">🔍 Probar API</button>
+        <div id="api-result" style="margin-top: 10px; font-family: monospace; background-color: #f8f9fa; padding: 10px; border-radius: 4px; display: none;"></div>
+    </div>
+</div>
+
+<script>
+// Función para cargar el top de libros
+async function loadTopBooks() {
+    document.getElementById('loading').style.display = 'block';
+    
+    try {
+        const response = await fetch('/admin/top-books/data');
+        const data = await response.json();
+        
+        renderBooksTable(data);
+    } catch (error) {
+        console.error('Error loading top books:', error);
+        document.getElementById('books-container').innerHTML = 
+            '<div style="text-align: center; color: red; padding: 20px;">❌ Error al cargar el top de libros</div>';
+    } finally {
+        document.getElementById('loading').style.display = 'none';
+    }
+}
+
+// Función para renderizar la tabla de libros
+function renderBooksTable(data) {
+    const container = document.getElementById('books-container');
+    
+    if (!data || data.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 20px;">📝 No se encontraron libros con reseñas</div>';
+        return;
+    }
+    
+    const table = `
+        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <thead>
+                <tr style="background-color: #e9ecef;">
+                    <th style="padding: 12px; text-align: center; border: 1px solid #dee2e6; width: 60px;">
+                        🏆 Posición
+                    </th>
+                    <th style="padding: 12px; text-align: left; border: 1px solid #dee2e6;">
+                        📖 Título del Libro
+                    </th>
+                    <th style="padding: 12px; text-align: left; border: 1px solid #dee2e6;">
+                        👥 Autor
+                    </th>
+                    <th style="padding: 12px; text-align: center; border: 1px solid #dee2e6;">
+                        ⭐ Rating
+                    </th>
+                    <th style="padding: 12px; text-align: center; border: 1px solid #dee2e6;">
+                        📝 Reseñas
+                    </th>
+                    <th style="padding: 12px; text-align: center; border: 1px solid #dee2e6;">
+                        � Reviews
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                ${data.map((book, index) => {
+                    const position = index + 1;
+                    const positionEmoji = position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : `${position}°`;
+                    const ratingStars = '⭐'.repeat(Math.round(book.average_rating));
+                    
+                    const bestReviewDisplay = book.best_review 
+                        ? `<div style="margin-bottom: 10px; padding: 8px; background-color: #e8f5e8; border-left: 4px solid #28a745; border-radius: 4px;">
+                             <strong>🥇 Mejor (${book.best_review_score}/5):</strong><br>
+                             <em>"${book.best_review.length > 80 ? book.best_review.substring(0, 80) + '...' : book.best_review}"</em><br>
+                             <small>- ${book.best_review_author || 'Anónimo'}</small>
+                           </div>`
+                        : '<em>Sin reseña mejor</em>';
+                    
+                    const worstReviewDisplay = book.worst_review 
+                        ? `<div style="padding: 8px; background-color: #ffebee; border-left: 4px solid #f44336; border-radius: 4px;">
+                             <strong>🥺 Peor (${book.worst_review_score}/5):</strong><br>
+                             <em>"${book.worst_review.length > 80 ? book.worst_review.substring(0, 80) + '...' : book.worst_review}"</em><br>
+                             <small>- ${book.worst_review_author || 'Anónimo'}</small>
+                           </div>`
+                        : '<em>Sin reseña peor</em>';
+                    
+                    return `
+                        <tr style="border-bottom: 1px solid #dee2e6;">
+                            <td style="padding: 12px; text-align: center; border: 1px solid #dee2e6; font-size: 1.2em;">
+                                <strong>${positionEmoji}</strong>
+                            </td>
+                            <td style="padding: 12px; border: 1px solid #dee2e6;">
+                                <strong style="color: #1976d2;">${book.title}</strong>
+                            </td>
+                            <td style="padding: 12px; border: 1px solid #dee2e6;">
+                                ${book.author_name}
+                            </td>
+                            <td style="padding: 12px; text-align: center; border: 1px solid #dee2e6;">
+                                <div style="display: flex; flex-direction: column; align-items: center;">
+                                    <span style="background-color: #fff3e0; padding: 6px 12px; border-radius: 12px; color: #f57c00; font-weight: bold; margin-bottom: 4px;">
+                                        ${Number(book.average_rating).toFixed(2)}
+                                    </span>
+                                    <div style="font-size: 0.9em;">${ratingStars}</div>
+                                </div>
+                            </td>
+                            <td style="padding: 12px; text-align: center; border: 1px solid #dee2e6;">
+                                <span style="background-color: #e3f2fd; padding: 4px 8px; border-radius: 12px; color: #1976d2;">
+                                    ${book.total_reviews}
+                                </span>
+                            </td>
+                            <td style="padding: 12px; border: 1px solid #dee2e6; max-width: 300px;">
+                                ${bestReviewDisplay}
+                                ${worstReviewDisplay}
+                            </td>
+                        </tr>
+                    `;
+                }).join('')}
+            </tbody>
+        </table>
+        
+        <div style="margin-top: 20px; padding: 15px; background-color: #f0f8e8; border-radius: 8px;">
+            <h4>📊 Resumen del Top 10</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <div>
+                    <strong>🥇 Mejor libro:</strong><br>
+                    <span style="color: #1976d2;">${data[0]?.title || 'N/A'}</span><br>
+                    <small>Rating: ${data[0] ? Number(data[0].average_rating).toFixed(2) : 'N/A'} ⭐</small>
+                </div>
+                <div>
+                    <strong>📈 Rating promedio del top 10:</strong><br>
+                    <span style="color: #f57c00; font-size: 1.1em;">
+                        ${data.length > 0 ? (data.reduce((sum, book) => sum + book.average_rating, 0) / data.length).toFixed(2) : 'N/A'} ⭐
+                    </span>
+                </div>
+                <div>
+                    <strong>📝 Total de reseñas:</strong><br>
+                    <span style="color: #388e3c; font-size: 1.1em;">
+                        ${data.reduce((sum, book) => sum + book.total_reviews, 0)}
+                    </span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML = table;
+}
+
+// Función para probar la API
+async function testTopBooksAPI() {
+    const resultDiv = document.getElementById('api-result');
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = 'Cargando...';
+    
+    try {
+        const response = await fetch('/admin/top-books/data');
+        const data = await response.json();
+        resultDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+    } catch (error) {
+        resultDiv.innerHTML = `<span style="color: red;">Error: ${error.message}</span>`;
+    }
+}
+
+// Cargar datos iniciales al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    loadTopBooks();
+});
+</script>
+{% endblock %}
