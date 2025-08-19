@@ -109,6 +109,12 @@ cargo build --release
 4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
 5. Abre un Pull Request
 
-## 📄 Licencia
+## 🌱 Seed de la Base de Datos
 
-Este proyecto está bajo la licencia MIT.
+Para poblar la base de datos con datos iniciales (seed), utiliza el archivo `populate_explicit_ids.sql`.  
+Este archivo contiene las inserciones necesarias para tener información de prueba en tu aplicación.
+
+Ejecuta el siguiente comando en tu terminal:
+
+```bash
+psql -h localhost -U <usuario_db> -d <nombre_db> -f populate_explicit_ids.sql
