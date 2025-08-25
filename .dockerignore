@@ -1,0 +1,5 @@
+# hola - comentario de prueba
+target/
+.git/
+.env
+*.log

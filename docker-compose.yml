@@ -1,0 +1,29 @@
+# hola - comentario de prueba
+services:
+  db:
+    container_name: bookreviews_db
+    image: postgres:15
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: bookuser
+      POSTGRES_PASSWORD: Hol@1234
+      POSTGRES_DB: bookreviews
+    volumes:
+      - bookreviews_data:/var/lib/postgresql/data
+
+  app:
+    container_name: bookreviews_app
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://bookuser:Hol%401234@db:5432/bookreviews
+      - ROCKET_PROFILE=docker
+    depends_on:
+      - db
+    volumes:
+      - .:/app
+
+volumes:
+  bookreviews_data: {}
