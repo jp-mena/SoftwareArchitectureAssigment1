@@ -1,4 +1,3 @@
-# hola - comentario de prueba
 services:
   db:
     container_name: bookreviews_db
@@ -24,6 +23,22 @@ services:
       - db
     volumes:
       - .:/app
+
+  populate:
+    container_name: bookreviews_populate
+    image: postgres:15
+    depends_on:
+      - app
+    environment:
+      PGPASSWORD: Hol@1234
+    volumes:
+      - ./populate_explicit_ids.sql:/populate.sql
+    command: >
+      sh -c "
+        sleep 30 &&
+        psql -h db -U bookuser -d bookreviews -f /populate.sql &&
+        echo 'Base de datos poblada exitosamente'
+      "
 
 volumes:
   bookreviews_data: {}
