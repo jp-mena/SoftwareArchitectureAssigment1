@@ -2,15 +2,49 @@
 
 Una API REST construida con Rust y Rocket para gestionar reseñas de libros, conectada a PostgreSQL.
 
-## 🚀 Configuración del Proyecto
+## 🚀 Inicio Rápido
+
+### 1. Configuración
+```bash
+# 1. Copia el archivo de configuración
+cp Rocket.toml.example Rocket.toml
+
+# 2. Edita Rocket.toml con tus credenciales:
+#    - Cambia TU_USUARIO por tu usuario de PostgreSQL
+#    - Cambia TU_CONTRASEÑA por tu contraseña (codifica @ como %40)
+#    - Cambia TU_BASE_DE_DATOS por el nombre de tu base de datos
+#    - Genera nuevas secret_key con: openssl rand -base64 32
+```
+
+### 2. Ejecutar con Docker (Recomendado)
+```bash
+# Ejecutar aplicación y base de datos en contenedores
+docker compose up --build
+
+# La aplicación estará disponible en: http://localhost:8000
+# PostgreSQL estará disponible en: localhost:5433
+```
+
+### 3. Ejecutar Localmente (Desarrollo)
+```bash
+# Asegúrate de tener PostgreSQL ejecutándose localmente
+cargo run
+
+# La aplicación estará disponible en: http://localhost:8000
+```
+
+## 🔧 Configuración del Proyecto
 
 ### Prerrequisitos
 
-- **Rust** (última versión estable)
-- **PostgreSQL** (versión 12 o superior)
-- **Cargo** (incluido con Rust)
+- **Docker y Docker Compose** (para la opción recomendada)
+- **Rust** (última versión estable) + **PostgreSQL** (para desarrollo local)
 
-### Configuración de la Base de Datos
+### Configuración de la Base de Datos Local (Opcional)
+
+### Configuración de la Base de Datos Local (Opcional)
+
+Si quieres ejecutar PostgreSQL localmente en lugar de usar Docker:
 
 1. **Crear la base de datos y usuario en PostgreSQL:**
 
@@ -31,34 +65,25 @@ sqlx migrate run
 # O manualmente ejecuta el archivo de migración en tu cliente PostgreSQL
 ```
 
-### Configuración del Servidor
+## ⚙️ Configuración Detallada
 
-1. **Clonar el repositorio:**
+### Archivo Rocket.toml
 
-```bash
-git clone [tu-repo-url]
-cd bookreviews
-```
+El archivo `Rocket.toml.example` contiene la configuración completa. Después de copiarlo a `Rocket.toml`, modifica:
 
-2. **Configurar Rocket.toml:**
+- **Secret Keys**: Genera nuevas con `openssl rand -base64 32`
+- **Database URLs**: Actualiza usuario, contraseña y nombre de base de datos
+- **Perfiles**: `[default]` para local, `[docker]` para contenedores
 
-```bash
-# Copiar el archivo de ejemplo
-cp Rocket.toml.example Rocket.toml
+### Variables de Entorno
 
-# Editar con tus credenciales reales
-# Asegúrate de escapar caracteres especiales en la URL:
-# @ se convierte en %40
-# Por ejemplo: postgres://bookuser:Hol%401234@localhost/bookreviews
-```
-
-3. **Ejecutar el proyecto:**
+También puedes usar variables de entorno en lugar de `Rocket.toml`:
 
 ```bash
+export ROCKET_DATABASES='{book_db={url="postgres://usuario:contraseña@localhost:5432/bookreviews"}}'
+export ROCKET_SECRET_KEY="tu-secret-key-aqui"
 cargo run
 ```
-
-El servidor se iniciará en `http://localhost:8000`
 
 ## 📋 Rutas Disponibles
 

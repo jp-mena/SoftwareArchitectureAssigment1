@@ -10,6 +10,7 @@ address = "0.0.0.0"
 port = 8000
 # TODO: Cambia esta secret_key por una nueva (usa: openssl rand -base64 32)
 secret_key = "CAMBIA_ESTA_SECRET_KEY_POR_UNA_NUEVA_DE_32_BYTES"
+#secret_key = "8Xui8SN4mI+7egV/9dlfYYLGQJeEx4+DwmSQLwDVXJg="
 
 [default.databases]
 # TODO: Cambia los datos de conexión según tu PostgreSQL local
@@ -24,6 +25,9 @@ address = "0.0.0.0"
 port = 8000
 # TODO: Cambia esta secret_key por una nueva diferente a la de [default]
 secret_key = "CAMBIA_ESTA_SECRET_KEY_POR_OTRA_NUEVA_DE_32_BYTES"
+secret_key = "RRifWIf0FnIHstfn7kGKMoEHdOcHe91fDACXD+LvJlA="
+
+
 
 [docker.databases]
 # TODO: Cambia los datos de conexión para Docker
