@@ -1,14 +1,53 @@
+# Rocket.toml.example
+# 
+# INSTRUCCIONES:
+# 1. Copia este archivo como "Rocket.toml" (elimina el .example)
+# 2. Cambia las variables marcadas con TODO según tu configuración
+# 3. Genera nuevas secret_key para producción
+
 [default]
-address = "127.0.0.1"
+address = "0.0.0.0"
 port = 8000
+# TODO: Cambia esta secret_key por una nueva (usa: openssl rand -base64 32)
+secret_key = "CAMBIA_ESTA_SECRET_KEY_POR_UNA_NUEVA_DE_32_BYTES"
 
 [default.databases]
-# IMPORTANT: Replace with your actual database credentials
-# Format: postgres://username:password@host/database_name
-book_db = { url = "postgres://your_username:your_password@localhost/your_database_name" }
+# TODO: Cambia los datos de conexión según tu PostgreSQL local
+# Format: postgres://usuario:contraseña@host:puerto/base_de_datos
+book_db = { url = "postgres://TU_USUARIO:TU_CONTRASEÑA@localhost:5432/TU_BASE_DE_DATOS" }
 
-[debug]
-port = 8000
+[default.template]
+dir = "templates"
 
-[release]
+[docker]
+address = "0.0.0.0"
 port = 8000
+# TODO: Cambia esta secret_key por una nueva diferente a la de [default]
+secret_key = "CAMBIA_ESTA_SECRET_KEY_POR_OTRA_NUEVA_DE_32_BYTES"
+
+[docker.databases]
+# TODO: Cambia los datos de conexión para Docker
+# Nota: El host debe ser "db" (nombre del servicio en docker-compose.yml)
+book_db = { url = "postgres://TU_USUARIO:TU_CONTRASEÑA_URL_ENCODED@db:5432/TU_BASE_DE_DATOS" }
+
+[docker.template]
+dir = "templates"
+
+# NOTAS IMPORTANTES:
+# 
+# 1. SECRET KEYS:
+#    - Deben ser de al menos 256 bits (32 bytes)
+#    - Genera nuevas con: openssl rand -base64 32
+#    - Nunca uses las mismas en desarrollo y producción
+#
+# 2. PASSWORDS CON CARACTERES ESPECIALES:
+#    - Si tu contraseña tiene @, %, etc., debes codificarla en URL
+#    - Ejemplo: "Hol@1234" debe ser "Hol%401234"
+#
+# 3. PROFILES:
+#    - [default]: Para desarrollo local (cargo run)
+#    - [docker]: Para contenedores (docker compose up)
+#
+# 4. DATABASE HOSTS:
+#    - Local: "localhost" o "127.0.0.1"
+#    - Docker: "db" (nombre del servicio en docker-compose.yml)
