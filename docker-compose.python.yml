@@ -1,0 +1,10 @@
+services:
+  app:
+    container_name: bookreviews_app_python
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000

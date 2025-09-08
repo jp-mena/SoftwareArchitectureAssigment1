@@ -4,6 +4,7 @@ FROM rust:latest
 RUN apt-get update && apt-get install -y \
     pkg-config \
     libssl-dev \
+    postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
 # Instalar sqlx-cli para migraciones
@@ -18,5 +19,8 @@ COPY . .
 # Exponer puerto
 EXPOSE 8000
 
+# Hacer el script ejecutable
+RUN chmod +x start.sh
+
 # Script para ejecutar migraciones y luego la app
-CMD ["sh", "-c", "sleep 10 && sqlx migrate run && cargo run"]
+CMD ["./start.sh"]

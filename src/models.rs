@@ -10,6 +10,7 @@ pub struct Author {
     pub date_of_birth: Option<NaiveDate>,
     pub country_of_origin: Option<String>,
     pub description: Option<String>,
+    pub image_path: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -22,6 +23,7 @@ pub struct CreateAuthor {
     #[validate(length(max = 100, message = "Country must be at most 100 characters"))]
     pub country_of_origin: Option<String>,
     pub description: Option<String>,
+    pub image_path: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Validate)]
@@ -32,6 +34,7 @@ pub struct UpdateAuthor {
     #[validate(length(max = 100, message = "Country must be at most 100 characters"))]
     pub country_of_origin: Option<String>,
     pub description: Option<String>,
+    pub image_path: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -71,6 +74,7 @@ pub struct Book {
     pub date_of_publication: Option<chrono::NaiveDate>,
     pub number_of_sales: i64,
     pub author_id: i32,
+    pub cover_image_path: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -85,6 +89,7 @@ pub struct CreateBook {
     #[validate(range(min = 0, message = "Number of sales must be positive"))]
     pub number_of_sales: Option<i64>,
     pub author_id: i32,
+    pub cover_image_path: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Validate)]
@@ -97,6 +102,7 @@ pub struct UpdateBook {
     #[validate(range(min = 0, message = "Number of sales must be positive"))]
     pub number_of_sales: Option<i64>,
     pub author_id: Option<i32>,
+    pub cover_image_path: Option<String>,
 }
 
 // ===============================

@@ -8,13 +8,17 @@ mod sales;
 mod simple_stats;
 mod top_books;
 mod top_sales;
-mod search;
+// mod search;
+// mod cache;
+// mod static_files;
+// mod file_upload;
 
 use rocket::http::Status;
 use rocket::response::Redirect;
 use rocket_dyn_templates::{Template, context};
 use rocket_db_pools::{Database, Connection};
 use sqlx;
+// use static_files::{StaticConfig, create_directories};
 
 #[derive(Database)]
 #[database("book_db")]
@@ -139,8 +143,8 @@ fn rocket() -> _ {
             top_books::admin_top_books_data,
             top_sales::admin_top_sales,
             top_sales::admin_top_sales_data,
-            search::admin_search,
-            search::admin_search_data
+            // search::admin_search,
+            // search::admin_search_data
         ])
         .mount("/api", authors::routes())
         .mount("/api", books::routes())
@@ -149,5 +153,5 @@ fn rocket() -> _ {
         .mount("/api", routes![simple_stats::get_simple_author_stats])
         .mount("/api", routes![top_books::get_top_books])
         .mount("/api", routes![top_sales::get_top_sales])
-        .mount("/api", routes![search::api_search_books])
+        // .mount("/api", routes![search::api_search_books]);
 }

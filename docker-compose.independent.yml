@@ -1,0 +1,10 @@
+services:
+  app:
+    container_name: bookreviews_app_independent
+    build:
+      context: .
+      dockerfile: Dockerfile.independent
+    ports:
+      - "8000:8000"
+    environment:
+      - ROCKET_PROFILE=docker

@@ -10,11 +10,15 @@ services:
       POSTGRES_DB: bookreviews
     volumes:
       - bookreviews_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U bookuser -d bookreviews"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+
+  redis:
+    container_name: bookreviews_redis
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
 
   app:
     container_name: bookreviews_app
@@ -23,13 +27,18 @@ services:
       - "8000:8000"
     environment:
       - DATABASE_URL=postgresql://bookuser:Hol%401234@db:5432/bookreviews
+      - REDIS_URL=redis://redis:6379
       - ROCKET_PROFILE=docker
+      - SERVE_STATIC=true
+      - STATIC_PATH=/app/static
+      - UPLOAD_PATH=/app/uploads
     depends_on:
-      db:
-        condition: service_healthy
-    restart: unless-stopped
+      - db
+      - redis
     volumes:
       - .:/app
+      - static_files:/app/static
+      - upload_files:/app/uploads
 
   populate:
     container_name: bookreviews_populate
@@ -49,3 +58,6 @@ services:
 
 volumes:
   bookreviews_data: {}
+  redis_data: {}
+  static_files: {}
+  upload_files: {}

@@ -10,11 +10,6 @@ services:
       POSTGRES_DB: bookreviews
     volumes:
       - bookreviews_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U bookuser -d bookreviews"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
 
   app:
     container_name: bookreviews_app
@@ -24,12 +19,15 @@ services:
     environment:
       - DATABASE_URL=postgresql://bookuser:Hol%401234@db:5432/bookreviews
       - ROCKET_PROFILE=docker
+      - SERVE_STATIC=true
+      - STATIC_PATH=/app/static
+      - UPLOAD_PATH=/app/uploads
     depends_on:
-      db:
-        condition: service_healthy
-    restart: unless-stopped
+      - db
     volumes:
       - .:/app
+      - static_files:/app/static
+      - upload_files:/app/uploads
 
   populate:
     container_name: bookreviews_populate
@@ -49,3 +47,5 @@ services:
 
 volumes:
   bookreviews_data: {}
+  static_files: {}
+  upload_files: {}

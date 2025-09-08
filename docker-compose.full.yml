@@ -1,0 +1,92 @@
+services:
+  db:
+    container_name: bookreviews_db
+    image: postgres:15
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: bookuser
+      POSTGRES_PASSWORD: Hol@1234
+      POSTGRES_DB: bookreviews
+    volumes:
+      - bookreviews_data:/var/lib/postgresql/data
+
+  redis:
+    container_name: bookreviews_redis
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
+  opensearch:
+    container_name: bookreviews_opensearch
+    image: opensearchproject/opensearch:2.11.0
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    environment:
+      - discovery.type=single-node
+      - plugins.security.disabled=true
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+
+  app:
+    container_name: bookreviews_app
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://bookuser:Hol%401234@db:5432/bookreviews
+      - REDIS_URL=redis://redis:6379
+      - OPENSEARCH_URL=http://opensearch:9200
+      - ROCKET_PROFILE=docker
+      - SERVE_STATIC=false
+      - STATIC_PATH=/app/static
+      - UPLOAD_PATH=/app/uploads
+    depends_on:
+      - db
+      - redis
+      - opensearch
+    volumes:
+      - .:/app
+      - static_files:/app/static
+      - upload_files:/app/uploads
+
+  haproxy:
+    container_name: bookreviews_haproxy
+    image: haproxy:2.8-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+      - static_files:/var/www/static:ro
+      - upload_files:/var/www/uploads:ro
+    depends_on:
+      - app
+
+  populate:
+    container_name: bookreviews_populate
+    image: postgres:15
+    depends_on:
+      - app
+    environment:
+      PGPASSWORD: Hol@1234
+    volumes:
+      - ./populate_explicit_ids.sql:/populate.sql
+    command: >
+      sh -c "
+        sleep 30 &&
+        psql -h db -U bookuser -d bookreviews -f /populate.sql &&
+        echo 'Base de datos poblada exitosamente'
+      "
+
+volumes:
+  bookreviews_data: {}
+  redis_data: {}
+  opensearch_data: {}
+  static_files: {}
+  upload_files: {}

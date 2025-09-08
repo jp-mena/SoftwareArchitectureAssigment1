@@ -1,0 +1,10 @@
+services:
+  app:
+    container_name: bookreviews_app_ultra_simple
+    build:
+      context: .
+      dockerfile: Dockerfile.ultra-simple
+    ports:
+      - "8000:8000"
+    environment:
+      - ROCKET_PROFILE=docker

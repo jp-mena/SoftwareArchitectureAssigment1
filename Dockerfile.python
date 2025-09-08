@@ -1,0 +1,16 @@
+FROM python:3.11-slim
+
+# Instalar Flask
+RUN pip install flask
+
+# Directorio de trabajo
+WORKDIR /app
+
+# Copiar aplicación
+COPY app.py .
+
+# Exponer puerto
+EXPOSE 8000
+
+# Ejecutar aplicación
+CMD ["python", "app.py"]
