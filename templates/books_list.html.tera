@@ -115,20 +115,19 @@
 
         const booksHTML = books.map(book => {
             const author = allAuthors.find(a => a.id === book.author_id);
-            const authorName = author ? author.name : `ID: ${book.author_id}`;
+            const authorName = author ? author.name : book.author_name || `ID: ${book.author_id}`;
             
             return `
                 <div class="author-card">
-                    <h4>${book.name}</h4>
+                    <h4>${book.title}</h4>
                     <p><strong>Autor:</strong> ${authorName}</p>
                     <p><strong>Resumen:</strong> ${book.summary || 'Sin resumen'}</p>
-                    <p><strong>Fecha de publicación:</strong> ${book.date_of_publication || 'No especificada'}</p>
-                    <p><strong>Ventas:</strong> ${book.number_of_sales.toLocaleString()}</p>
-                    <p><strong>Creado:</strong> ${new Date(book.created_at).toLocaleDateString()}</p>
+                    <p><strong>Fecha de publicación:</strong> ${book.publication_date || 'No especificada'}</p>
+                    <p><strong>Ventas:</strong> ${book.sales.toLocaleString()}</p>
                     
                     <div class="author-actions">
                         <button onclick="editBook(${book.id})" class="btn-success">✏️ Editar</button>
-                        <button onclick="deleteBook(${book.id}, '${book.name}')" class="btn-danger">🗑️ Eliminar</button>
+                        <button onclick="deleteBook(${book.id}, '${book.title}')" class="btn-danger">🗑️ Eliminar</button>
                         <button onclick="viewBookJSON(${book.id})">👁️ Ver JSON</button>
                     </div>
                 </div>
@@ -143,9 +142,9 @@
         const searchTerm = document.getElementById('search').value.toLowerCase();
         const filteredBooks = allBooks.filter(book => {
             const author = allAuthors.find(a => a.id === book.author_id);
-            const authorName = author ? author.name.toLowerCase() : '';
+            const authorName = author ? author.name.toLowerCase() : (book.author_name || '').toLowerCase();
             
-            return book.name.toLowerCase().includes(searchTerm) ||
+            return book.title.toLowerCase().includes(searchTerm) ||
                    authorName.includes(searchTerm) ||
                    (book.summary && book.summary.toLowerCase().includes(searchTerm));
         });
@@ -158,10 +157,10 @@
         if (!book) return;
 
         currentEditId = id;
-        document.getElementById('edit-name').value = book.name;
+        document.getElementById('edit-name').value = book.title;
         document.getElementById('edit-summary').value = book.summary || '';
-        document.getElementById('edit-publication').value = book.date_of_publication || '';
-        document.getElementById('edit-sales').value = book.number_of_sales;
+        document.getElementById('edit-publication').value = book.publication_date || '';
+        document.getElementById('edit-sales').value = book.sales;
         document.getElementById('edit-author').value = book.author_id;
         
         document.getElementById('edit-modal').style.display = 'block';
@@ -180,10 +179,10 @@
         if (!currentEditId) return;
 
         const updateData = {
-            name: document.getElementById('edit-name').value,
+            title: document.getElementById('edit-name').value,
             summary: document.getElementById('edit-summary').value || null,
-            date_of_publication: document.getElementById('edit-publication').value || null,
-            number_of_sales: parseInt(document.getElementById('edit-sales').value),
+            publication_date: document.getElementById('edit-publication').value || null,
+            sales: parseInt(document.getElementById('edit-sales').value),
             author_id: parseInt(document.getElementById('edit-author').value)
         };
 
