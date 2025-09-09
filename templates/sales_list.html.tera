@@ -1,0 +1,43 @@
+{% extends "base" %}
+
+{% block title %}Gestión de Ventas - Book Reviews{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="header">
+        <h1>💰 Gestión de Ventas</h1>
+        <p>Administra las ventas de libros por año</p>
+    </div>
+
+    <div class="actions">
+        <a href="/admin/sales/new" class="btn btn-primary">➕ Nueva Venta</a>
+        <a href="/api/sales" target="_blank" class="btn btn-secondary">🔗 API JSON</a>
+    </div>
+
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Libro</th>
+                    <th>Año</th>
+                    <th>Ventas</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sale in sales %}
+                <tr>
+                    <td>{{ sale.0 }}</td>
+                    <td>{{ sale.1 }}</td>
+                    <td>{{ sale.2 }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning">✏️ Editar</button>
+                        <button class="btn btn-sm btn-danger">🗑️ Eliminar</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

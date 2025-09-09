@@ -1,0 +1,73 @@
+{% extends "base" %}
+
+{% block title %}Nueva Venta - Book Reviews{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="header">
+        <h1>💰 Nueva Venta</h1>
+        <p>Registra las ventas de un libro para un año específico</p>
+    </div>
+
+    <form class="form" id="saleForm">
+        <div class="form-group">
+            <label for="book_id">Libro:</label>
+            <select id="book_id" name="book_id" required>
+                <option value="">Selecciona un libro</option>
+                <option value="1">Cien años de soledad</option>
+                <option value="2">La casa de los espíritus</option>
+                <option value="3">El amor en los tiempos del cólera</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="year">Año:</label>
+            <input type="number" id="year" name="year" min="1900" max="2030" value="2025" required>
+        </div>
+
+        <div class="form-group">
+            <label for="sales">Número de Ventas:</label>
+            <input type="number" id="sales" name="sales" min="0" required placeholder="Ej: 1000000">
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">💾 Registrar Venta</button>
+            <a href="/admin/sales" class="btn btn-secondary">❌ Cancelar</a>
+        </div>
+    </form>
+</div>
+
+<script>
+document.getElementById('saleForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = {
+        book_id: parseInt(formData.get('book_id')),
+        year: parseInt(formData.get('year')),
+        sales: parseInt(formData.get('sales'))
+    };
+    
+    try {
+        const response = await fetch('/api/sales', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('✅ Venta registrada exitosamente');
+            window.location.href = '/admin/sales';
+        } else {
+            alert('❌ Error al registrar la venta: ' + result.error);
+        }
+    } catch (error) {
+        alert('❌ Error de conexión: ' + error.message);
+    }
+});
+</script>
+{% endblock %}

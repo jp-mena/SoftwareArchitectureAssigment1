@@ -1,0 +1,80 @@
+{% extends "base" %}
+
+{% block title %}Nueva Reseña - Book Reviews{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="header">
+        <h1>📝 Nueva Reseña</h1>
+        <p>Crea una nueva reseña para un libro</p>
+    </div>
+
+    <form class="form" id="reviewForm">
+        <div class="form-group">
+            <label for="book_id">Libro:</label>
+            <select id="book_id" name="book_id" required>
+                <option value="">Selecciona un libro</option>
+                <option value="1">Cien años de soledad</option>
+                <option value="2">La casa de los espíritus</option>
+                <option value="3">El amor en los tiempos del cólera</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="review">Reseña:</label>
+            <textarea id="review" name="review" rows="5" required placeholder="Escribe tu reseña aquí..."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="score">Puntuación:</label>
+            <select id="score" name="score" required>
+                <option value="">Selecciona una puntuación</option>
+                <option value="1">1 ⭐ (Muy malo)</option>
+                <option value="2">2 ⭐⭐ (Malo)</option>
+                <option value="3">3 ⭐⭐⭐ (Regular)</option>
+                <option value="4">4 ⭐⭐⭐⭐ (Bueno)</option>
+                <option value="5">5 ⭐⭐⭐⭐⭐ (Excelente)</option>
+            </select>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">💾 Crear Reseña</button>
+            <a href="/admin/reviews" class="btn btn-secondary">❌ Cancelar</a>
+        </div>
+    </form>
+</div>
+
+<script>
+document.getElementById('reviewForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = {
+        book_id: parseInt(formData.get('book_id')),
+        review: formData.get('review'),
+        score: parseInt(formData.get('score'))
+    };
+    
+    try {
+        const response = await fetch('/api/reviews', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('✅ Reseña creada exitosamente');
+            window.location.href = '/admin/reviews';
+        } else {
+            alert('❌ Error al crear la reseña: ' + result.error);
+        }
+    } catch (error) {
+        alert('❌ Error de conexión: ' + error.message);
+    }
+});
+</script>
+{% endblock %}

@@ -11,7 +11,7 @@ WORKDIR /app
 
 # Copiar archivos
 COPY Cargo.toml .
-COPY src/main_final.rs src/main.rs
+COPY src/main_complete.rs src/main.rs
 COPY templates/ templates/
 
 # Exponer puerto

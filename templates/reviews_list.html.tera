@@ -1,0 +1,56 @@
+{% extends "base" %}
+
+{% block title %}Gestión de Reseñas - Book Reviews{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="header">
+        <h1>📝 Gestión de Reseñas</h1>
+        <p>Administra las reseñas de libros</p>
+    </div>
+
+    <div class="actions">
+        <a href="/admin/reviews/new" class="btn btn-primary">➕ Nueva Reseña</a>
+        <a href="/api/reviews" target="_blank" class="btn btn-secondary">🔗 API JSON</a>
+    </div>
+
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Libro</th>
+                    <th>Reseña</th>
+                    <th>Puntuación</th>
+                    <th>Upvotes</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for review in reviews %}
+                <tr>
+                    <td>{{ review.0 }}</td>
+                    <td>{{ review.1 }}</td>
+                    <td>
+                        <span class="rating">
+                            {% for i in range(start=1, end=6) %}
+                                {% if i <= review.2 %}
+                                    ⭐
+                                {% else %}
+                                    ☆
+                                {% endif %}
+                            {% endfor %}
+                            ({{ review.2 }}/5)
+                        </span>
+                    </td>
+                    <td>{{ review.3 }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning">✏️ Editar</button>
+                        <button class="btn btn-sm btn-danger">🗑️ Eliminar</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

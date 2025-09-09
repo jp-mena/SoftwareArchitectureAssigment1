@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # Base de datos PostgreSQL
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: bookreviews
+      POSTGRES_USER: bookuser
+      POSTGRES_PASSWORD: Hol@1234
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bookuser -d bookreviews"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Aplicación Rust
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.final
+    ports:
+      - "8001:8000"  # Puerto interno para HAProxy
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql://bookuser:Hol@1234@db:5432/bookreviews
+
+  # HAProxy Reverse Proxy
+  haproxy:
+    image: haproxy:2.8
+    ports:
+      - "80:80"      # HTTP
+      - "443:443"    # HTTPS
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+      - ./ssl:/usr/local/etc/haproxy/ssl:ro
+      - ./static:/var/www/static:ro  # Archivos estáticos
+    depends_on:
+      - app
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

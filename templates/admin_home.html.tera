@@ -68,7 +68,7 @@
         <h3>📊 Estadísticas Simples</h3>
         <p>Resumen básico de autores y libros</p>
         <div class="author-actions">
-            <a href="/admin/simple-author-stats" style="text-decoration: none;">
+            <a href="/admin/stats/authors" style="text-decoration: none;">
                 <button class="btn-success">📈 Ver Estadísticas</button>
             </a>
         </div>
@@ -79,7 +79,7 @@
         <h3>🏆 Top 10 Libros</h3>
         <p>Los libros mejor valorados</p>
         <div class="author-actions">
-            <a href="/admin/top-books" style="text-decoration: none;">
+            <a href="/admin/stats/top-books" style="text-decoration: none;">
                 <button class="btn-success">📚 Ver Top 10</button>
             </a>
         </div>
@@ -90,7 +90,7 @@
         <h3>💰 Top 50 Ventas</h3>
         <p>Los libros más vendidos de todos los tiempos</p>
         <div class="author-actions">
-            <a href="/admin/top-sales" style="text-decoration: none;">
+            <a href="/admin/stats/top-sales" style="text-decoration: none;">
                 <button class="btn-success">📈 Ver Top 50</button>
             </a>
         </div>
@@ -219,9 +219,13 @@
         statusDiv.innerHTML = 'Verificando...';
         
         try {
-            const response = await fetch('/health/db');
-            const text = await response.text();
-            statusDiv.innerHTML = `<span style="color: green;">✅ ${text}</span>`;
+            const response = await fetch('/api/verify-db');
+            const data = await response.json();
+            if (data.success) {
+                statusDiv.innerHTML = `<span style="color: green;">✅ ${data.message}</span>`;
+            } else {
+                statusDiv.innerHTML = `<span style="color: red;">❌ Error: ${data.error}</span>`;
+            }
         } catch (error) {
             statusDiv.innerHTML = `<span style="color: red;">❌ Error: ${error.message}</span>`;
         }
